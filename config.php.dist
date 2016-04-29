@@ -1,0 +1,9 @@
+<?php
+
+// Slim
+// $config['displayErrorDetails'] = true; // Debug
+$config['displayErrorDetails'] = false; // Production
+
+// Twitter
+$config['twitter']['key'] = "";
+$config['twitter']['secret'] = "";

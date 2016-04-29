@@ -8,3 +8,7 @@ app.yaml
 # Composer (PHP)
 composer.phar
 vendor/
+
+# Local settings
+config.php
+tasks.json
