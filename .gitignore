@@ -12,3 +12,5 @@ vendor/
 # Local settings
 config.php
 tasks.json
+test.php
+test.txt
