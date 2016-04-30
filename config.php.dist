@@ -1,9 +1,29 @@
 <?php
 
+////////////////////////////////////////////////////////////////
+//                                                            //
+//     Replace all instances of REQUIRED_FILL_IN below        //
+//                                                            //
+////////////////////////////////////////////////////////////////
+
 // Slim
 // $config['displayErrorDetails'] = true; // Debug
 $config['displayErrorDetails'] = false; // Production
 
 // Twitter
-$config['twitter']['key'] = "";
-$config['twitter']['secret'] = "";
+$config['twitter']['key'] = "REQUIRED_FILL_IN";
+$config['twitter']['secret'] = "REQUIRED_FILL_IN";
+
+// Database
+$config['db']['main']['host'] = "REQUIRED_FILL_IN";
+$config['db']['main']['name'] = "REQUIRED_FILL_IN";
+$config['db']['main']['user'] = "REQUIRED_FILL_IN";
+$config['db']['main']['password'] = "REQUIRED_FILL_IN";
+$config['db']['main']['driver'] = "pdo_mysql";
+
+// Global
+$config['global']['baseUrl'] = "REQUIRED_FILL_IN";
+$config['global']['timezone'] = "REQUIRED_FILL_IN"; // Example: America/Chicago
+
+// HipChat
+$config['hipchat']['screenname'] = "REQUIRED_FILL_IN";

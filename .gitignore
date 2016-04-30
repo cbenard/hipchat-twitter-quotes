@@ -4,6 +4,7 @@ app.yaml
 
 # Visual Studio Code
 .settings/
+.vscode/
 
 # Composer (PHP)
 composer.phar
@@ -11,6 +12,8 @@ vendor/
 
 # Local settings
 config.php
-tasks.json
 test.php
 test.txt
+
+# Logs
+logs/

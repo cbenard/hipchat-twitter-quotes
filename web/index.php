@@ -4,11 +4,11 @@ use \Psr\Http\Message\ResponseInterface as Response;
 
 require_once("../common.php");
 
-$app = new \Slim\App($config, $container);
-$app->get('/hello/{name}', function (Request $request, Response $response) {
-    $name = $request->getAttribute('name');
-    $response->getBody()->write("Hello, $name");
+$app = new \Slim\App($container);
 
-    return $response;
-});
+$app->get('/capabilities.json', '\Controllers\StaticContentController:capabilities');
+$app->post('/installed', '\Controllers\InstallationController:install');
+$app->get('/uninstalled', '\Controllers\InstallationController:uninstall');
+$app->get('/configure', '\Controllers\ConfigurationController:configure');
+
 $app->run();

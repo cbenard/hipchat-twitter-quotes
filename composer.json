@@ -1,6 +1,10 @@
 {
     "require": {
         "slim/slim": "^3.3",
-        "corbanb/freebird-php": "^0.2.3"
+        "corbanb/freebird-php": "^0.2.3",
+        "vlucas/spot2": "~2.0",
+        "monolog/monolog": "^1.19",
+        "slim/php-view": "^2.1",
+        "firebase/php-jwt": "^3.0"
     }
 }

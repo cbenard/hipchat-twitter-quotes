@@ -36,7 +36,17 @@ class TwitterService {
             )
         );
         
-        print_r(json_decode($response));
+        $o = json_decode($response);
+        $result = array_map(function($item) {
+            return array(
+                'created_at' => $item->created_at,
+                'id' => $item->id_str,
+                'text' => $item->text,
+                'user_id' => $item->user->id_str
+            );
+        }, $o);
+        
+        return $result;
     }
     
     private function runPreflightChecks() {

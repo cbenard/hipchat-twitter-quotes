@@ -1,0 +1,33 @@
+<?php
+$baseUrl = $data['base_url'];
+
+?>{
+    "name": "Twitter Quotes",
+    "description": "Provides searchable Twitter quotes.",
+    "key": "hipchat-twitter-quotes",
+    "links": {
+        "homepage": "https://github.com/cbenard/hipchat-twitter-quotes",
+        "self": "<?=$baseUrl?>/capabilities.json"
+    },
+    "vendor": {
+        "name": "Chris Benard",
+        "url": "https://chrisbenard.net/"
+    },
+    "capabilities": {
+        "hipchatApiConsumer": {
+            "fromName": "<?=$data['integration_screenname']?>",
+            "scopes": [
+                "send_notification"
+            ]
+        },
+        "installable": {
+            "allowGlobal": false,
+            "allowRoom": true,
+            "callbackUrl": "<?=$baseUrl?>/installed",
+            "uninstalledUrl": "<?=$baseUrl?>/uninstalled"
+        },
+        "configurable": {
+           "url": "<?=$baseUrl?>/configure"
+        }
+    }
+}
