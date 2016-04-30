@@ -36,6 +36,7 @@ class InstallationController {
         unset($installation->access_token);
         unset($installation->access_token_expiration);
         
+        $installation->oauth_secret = $body['oauthSecret'];
         $installation->room_id = $body['roomId'];
         $installation->group_id = $body['groupId'];
         $installation->raw_json = $raw_body;

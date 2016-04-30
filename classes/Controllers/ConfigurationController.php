@@ -14,12 +14,34 @@ class ConfigurationController {
     
     public function configure(Request $request, Response $response, $args) {
         $this->container->logger->addInfo("Configuration Requested");
-    
-        $baseUrl = $this->container->config['global']['baseUrl'];
-        $integration_screenname = $this->container->config['hipchat']['screenname'];
+        $this->validateJwt($request);
         
-        $response->getBody()->write("Hello, World");
+        $response = $this->container->view->render($response, "configure.phtml", [
+        ]);
 
         return $response;
+    }
+    
+    private function validateJwt($request) {
+        $encodedJwt = $this->getJwt($request);
+        $jwtResponse = $this->container->jwt->validateJwt($encodedJwt);
+    }
+    
+    private function getJwt($request) {
+        $queryParams = $request->getQueryParams();
+        $headers = $request->getHeaders();
+        $encodedJwt = null;
+        
+        if (isset($queryParams['signed_request'])) {
+            $encodedJwt = $queryParams['signed_request'];
+        }
+        elseif (isset($headers['authorization'])) {
+            $encodedJwt = substr($headers['authorization'], 4, 0);
+        }
+        elseif (isset($headers['Authorization'])) {
+            $encodedJwt = substr($headers['Authorization'], 4, 0);
+        }
+        
+        return $encodedJwt;
     }
 }

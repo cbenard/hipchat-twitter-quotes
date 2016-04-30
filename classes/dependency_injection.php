@@ -2,6 +2,10 @@
 
 $container = new \Slim\Container;
 
+$container['mode'] = $config['app']['debug'] ? "development" : "production";
+$container['debug'] = $config['app']['debug'];
+$container['displayErrorDetails'] = $config['app']['debug'];
+
 $container['logger'] = function($c) {
     $logger = new \Monolog\Logger('my_logger');
     $file_handler = new \Monolog\Handler\StreamHandler("../logs/app.log");
@@ -9,7 +13,7 @@ $container['logger'] = function($c) {
     return $logger;
 };
 
-$container['view'] = new \Slim\Views\PhpRenderer("../templates/");
+$container['view'] = function($c) { return new \Slim\Views\PhpRenderer("../templates/"); };
 
 $container['config'] = $config;
 
@@ -21,4 +25,6 @@ $cfg->addConnection('main', [
     'host' => $config['db']['main']['host'],
     'driver' => 'pdo_mysql',
 ]);
-$container['db'] = new \Spot\Locator($cfg);
+$container['db'] = function($c) use ($cfg) { return new \Spot\Locator($cfg); };
+
+$container['jwt'] = function($c) { return new \cbenard\JWTService($c); };

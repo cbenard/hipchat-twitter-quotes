@@ -20,21 +20,23 @@ class TwitterService {
         $this->bearer_token = $bearer_token;
     }
     
-    public function fetchTweetsSince($screen_name, $since_id) {
+    public function fetchTweetsSince($screen_name, $since_id = null) {
         $this->runPreflightChecks();
         
-        $response = $this->client->api_request(
-            'statuses/user_timeline.json',
-            array
-            (
+        $params = [
                 'screen_name' => $screen_name,
                 'count' => 200,
                 'trim_user' => 'true',
                 'exclude_replies' => 'true',
                 'contributor_details' => 'false',
                 'include_rts' => 'false'
-            )
-        );
+        ];
+        
+        if ($since_id) {
+            $params['since_id'] = $since_id;
+        }
+        
+        $response = $this->client->api_request('statuses/user_timeline.json', $params);
         
         $o = json_decode($response);
         $result = array_map(function($item) {

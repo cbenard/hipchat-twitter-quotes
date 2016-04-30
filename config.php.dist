@@ -7,8 +7,7 @@
 ////////////////////////////////////////////////////////////////
 
 // Slim
-// $config['displayErrorDetails'] = true; // Debug
-$config['displayErrorDetails'] = false; // Production
+$config['app']['debug'] = false; // Set to true for Debug
 
 // Twitter
 $config['twitter']['key'] = "REQUIRED_FILL_IN";
