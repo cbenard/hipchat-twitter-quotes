@@ -7,9 +7,11 @@ use \Psr\Http\Message\ResponseInterface as Response;
 
 class ConfigurationController {
     private $container;
+    private $hipchat;
     
     public function __construct($container) {
         $this->container = $container;
+        $this->hipchat = $container->hipchat;
     }
     
     public function display(Request $request, Response $response, $args) {
@@ -33,10 +35,14 @@ class ConfigurationController {
         $jwt = $this->validateJwt($request);
         
         $mapper = $this->container->db->mapper('\Entity\Installation');
-        $installation = $mapper->first([ 'oauth_id' => $jwt->iss ]);
+        $oauth_id = $jwt->iss;
+        $installation = $mapper->first([ 'oauth_id' => $oauth_id ]);
         
         $installation->twitter_screenname = $body['screen_name'];
         $installation->webhook_trigger = $body['webhook_trigger'];
+        
+        $this->hipchat->registerhook($installation);
+        
         $mapper->save($installation);
         
         $response = $this->container->view->render($response, "configure.phtml", [

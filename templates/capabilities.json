@@ -17,7 +17,8 @@ $baseUrl = $data['base_url'];
         "hipchatApiConsumer": {
             "fromName": "<?=$data['integration_screenname']?>",
             "scopes": [
-                "send_notification"
+                "send_notification",
+                "view_messages"
             ]
         },
         "installable": {

@@ -5,6 +5,7 @@
         "vlucas/spot2": "~2.0",
         "monolog/monolog": "^1.19",
         "slim/php-view": "^2.1",
-        "firebase/php-jwt": "^3.0"
+        "firebase/php-jwt": "^3.0",
+        "nategood/httpful": "^0.2.20"
     }
 }
