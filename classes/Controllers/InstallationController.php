@@ -23,18 +23,25 @@ class InstallationController {
             "apiUrl" => $capabilities->capabilities->hipchatApiProvider->url,
             ]);
         
+        $now = new \DateTime("now");
         $mapper = $this->container->db->mapper('\Entity\Installation');
         $installation = $mapper->first([ 'oauth_id' => $body['oauthId'] ]);
         if (!$installation) {
-            $installation = $mapper->build([ 'oauth_id' => $body['oauthId'] ]);
+            $installation = $mapper->build([
+                'oauth_id' => $body['oauthId'],
+                'created_on' => $now
+            ]);
         }
         
         unset($installation->access_token);
         unset($installation->access_token_expiration);
         
+        $installation->room_id = $body['roomId'];
+        $installation->group_id = $body['groupId'];
         $installation->raw_json = $raw_body;
         $installation->token_url = $capabilities->capabilities->oauth2Provider->tokenUrl;
         $installation->api_url = $capabilities->capabilities->hipchatApiProvider->url;
+        $installation->updated_on = $now;
        
         $dbresult = $mapper->save($installation);
         
