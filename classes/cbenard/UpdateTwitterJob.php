@@ -97,6 +97,36 @@ class UpdateTwitterJob {
         }
         
         $this->log("Saved " . count($tweets) . ".\r\n");
+        
+        try {
+            if(count($tweets)) {
+                $this->sendUpdatedNotification($twitter_screenname, count($tweets));
+            }
+        }
+        catch (\Exception $e) {
+            $this->log("Error sending updated notification: " . $e);
+        }
+    }
+    
+    private function sendUpdatedNotification($twitter_screenname, $count) {
+        $mapper = $this->db->mapper('\Entity\Installation');
+        $installations = $mapper->all([ 'twitter_screenname' => $twitter_screenname ]);
+        
+        if ($installations) {
+            foreach ($installations as $installation) {
+                $message = new \stdClass;
+                $message->from = "New Tweet" . ($count != 1 ? "s" : "");
+                $message->message_format = "html";
+                $message->color = "yellow";
+                $tweetplurality = $count != 1 ? "new tweets have" : "a new tweet has";
+                $itistheyare = $count != 1 ? "They are" : "It is";
+                $message->message = "I have noticed that {$tweetplurality} been added by "
+                    . "<a href=\"https://twitter.com/{$installation->twitter_screenname}\">@{$installation->twitter_screenname}</a>. "
+                    . "{$itistheyare} now available for use with this integration.";
+                
+                $this->hipchat->sendRoomNotification($installation, $message);
+            }
+        }
     }
     
     private function log($message) {

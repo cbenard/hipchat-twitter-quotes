@@ -19,7 +19,6 @@ class Installation extends \Spot\Entity {
             'created_on' => [ 'type' => 'datetime', 'required' => true ],
             'updated_on' => [ 'type' => 'datetime', 'required' => true ],
             'twitter_screenname' => [ 'type' => 'string', 'required' => false, 'length' => 255 ],
-            'tweet_count' => [ 'type' => 'integer', 'required' => false],
             'webhook_trigger' => [ 'type' => 'string', 'required' => false, 'length' => 25 ],
         ];
     }
