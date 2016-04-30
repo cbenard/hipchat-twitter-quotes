@@ -5,6 +5,10 @@ This application fetches tweets from an account on a regular basis and provides 
 1. Create a MySQL database and user and grant full permissions on the database to the user.
 2. Copy `config.php.dist` to `config.php`. Edit `config.php`, filling in required configuration values.
 3. Ensure `always_populate_raw_post_data = -1` in your `php.ini` when using PHP 5.6+.
+4. Point your document root to the `web` subfolder.
+5. Redirect all non-found requests to the `web/index.php` front controller.
+  * `.htaccess`/`VirtualHost` definition on Apache
+  * `try_files` directive in nginx config.
 
 ## Contributing
 Pull requests are welcome and will be reviewed promptly.
