@@ -13,7 +13,7 @@ class StaticContentController {
     }
     
     public function capabilities(Request $request, Response $response, $args) {
-        $this->container->logger->addInfo("Capabilities Requested");
+        $this->container->logger->info("Capabilities Requested");
     
         $baseUrl = $this->container->config['global']['baseUrl'];
         $integration_screenname = $this->container->config['hipchat']['screenname'];

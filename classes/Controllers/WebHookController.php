@@ -17,7 +17,7 @@ class WebHookController {
     }
     
     public function trigger(Request $request, Response $response, $args) {
-        $this->container->logger->addInfo("Web Hook Triggered", [
+        $this->container->logger->info("Web Hook Triggered", [
             "request" => $request,
             "body" => $request->getBody(),
             "queryParams" => $request->getQueryParams(),
@@ -30,7 +30,7 @@ class WebHookController {
         
         // $jwt = $this->jwt->validateRequest($request);
         
-        // $this->container->logger->addInfo("Web Hook JWT validated", [
+        // $this->container->logger->info("Web Hook JWT validated", [
         //     "jwt" => $jwt
         // ]);
         
@@ -40,7 +40,7 @@ class WebHookController {
         $oauth_id = $request->getParsedBody()['oauth_client_id'];
         $installation = $this->installationMapper->first([ 'oauth_id' => $oauth_id ]);
         
-        $this->container->logger->addInfo("Web Hook installation fetched", [
+        $this->container->logger->info("Web Hook installation fetched", [
             "installation" => $installation
         ]);
         

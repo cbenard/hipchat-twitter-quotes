@@ -7,18 +7,20 @@ use \Psr\Http\Message\ResponseInterface as Response;
 
 class InstallationController {
     private $container;
+    private $hipchat;
     
     public function __construct($container) {
         $this->container = $container;
+        $this->hipchat = $container->hipchat;
     }
     
     public function install(Request $request, Response $response, $args) {
         $raw_body = (string)$request->getBody();
-        $this->container->logger->addInfo("Install Requested", [ "capabilities_url" => $request->getParsedBody()['capabilitiesUrl'], "oauthId" => $request->getParsedBody()['oauthId'] ]);
+        $this->container->logger->info("Install Requested", [ "capabilities_url" => $request->getParsedBody()['capabilitiesUrl'], "oauthId" => $request->getParsedBody()['oauthId'] ]);
     
         $body = $request->getParsedBody();
         $capabilities = json_decode(file_get_contents($body['capabilitiesUrl']));
-        $this->container->logger->addInfo("Retrieved Capabilities", [
+        $this->container->logger->info("Retrieved Capabilities", [
             "tokenUrl" => $capabilities->capabilities->oauth2Provider->tokenUrl,
             "apiUrl" => $capabilities->capabilities->hipchatApiProvider->url,
             ]);
@@ -46,6 +48,13 @@ class InstallationController {
        
         $dbresult = $mapper->save($installation);
         
+        try {
+            $this->sendInstallationMessage($installation);
+        }
+        catch (\Exception $e) {
+            $this->container->logger->error("Error sending installation message", [ "exception" => $e ]);
+        }
+        
         if ($dbresult) {
             return $response;
         }
@@ -57,7 +66,7 @@ class InstallationController {
     public function uninstall(Request $request, Response $response, $args) {
         $headers = $request->getHeaders();
         $body = $request->getQueryParams();
-        $this->container->logger->addInfo("Uninstall Requested", [ "headers" => $headers, "body" => $body ]);
+        $this->container->logger->info("Uninstall Requested", [ "headers" => $headers, "body" => $body ]);
         
         $installable = json_decode(file_get_contents($body['installable_url']));
         
@@ -68,5 +77,15 @@ class InstallationController {
         }
         
         return $response->withStatus(301)->withHeader('Location', $body['redirect_url']);
+    }
+    
+    private function sendInstallationMessage($installation) {
+        $message = new \stdClass;
+        $message->from = "Installation";
+        $message->message_format = "html";
+        $message->color = "yellow";
+        $message->message = "I have been installed. Please visit the integration's Configure tab to set the Twitter account I will monitor and my trigger.";
+        
+        $this->hipchat->sendRoomNotification($installation, $message);
     }
 }

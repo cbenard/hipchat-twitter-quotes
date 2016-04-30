@@ -42,7 +42,7 @@ class JWTService {
     }
     
     public function validateJwt($jwt) {
-        $this->container->logger->addInfo("JWT validation Requested", [ 'encoded' => $jwt ]);
+        $this->container->logger->info("JWT validation Requested", [ 'encoded' => $jwt ]);
         $jwtArray = explode('.', $jwt);
         if (count($jwtArray) !== 3) return false;
         

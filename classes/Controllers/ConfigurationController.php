@@ -15,7 +15,7 @@ class ConfigurationController {
     }
     
     public function display(Request $request, Response $response, $args) {
-        $this->container->logger->addInfo("Configuration Requested");
+        $this->container->logger->info("Configuration Requested");
         $jwt = $this->container->jwt->validateRequest($request);
         
         $mapper = $this->container->db->mapper('\Entity\Installation');
@@ -31,7 +31,7 @@ class ConfigurationController {
     
     public function update(Request $request, Response $response, $args) {
         $body = $request->getParsedBody();
-        $this->container->logger->addInfo("Update Configuration Requested", [ 'request' => $body ]);
+        $this->container->logger->info("Update Configuration Requested", [ 'request' => $body ]);
         $jwt = $this->container->jwt->validateRequest($request);
         
         $mapper = $this->container->db->mapper('\Entity\Installation');
@@ -45,11 +45,30 @@ class ConfigurationController {
         
         $mapper->save($installation);
         
+        try {
+            $this->sendReconfigureMessage($installation);
+        }
+        catch (\Exception $e) {
+            $this->container->logger->error("Error sending configuration message", [ "exception" => $e ]);
+        }
+        
         $response = $this->container->view->render($response, "configure.phtml", [
             "screen_name" => $installation->twitter_screenname,
             "webhook_trigger" => $installation->webhook_trigger
         ]);
 
         return $response;
+    }
+    
+    private function sendReconfigureMessage($installation) {
+        $message = new \stdClass;
+        $message->from = "Reconfiguration";
+        $message->message_format = "html";
+        $message->color = "yellow";
+        $message->message = "I have been reconfigured. I am now monitoring "
+            . "<a href=\"https://twitter.com/{$installation->twitter_screenname}\">@{$installation->twitter_screenname}</a> "
+            . "and listening for the trigger <code>{$installation->webhook_trigger}</code>.";
+        
+        $this->hipchat->sendRoomNotification($installation, $message);
     }
 }

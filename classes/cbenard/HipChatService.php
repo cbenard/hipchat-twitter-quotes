@@ -27,7 +27,7 @@ class HipChatService {
         $request->pattern = $this->getHookPattern($installation->webhook_trigger);
         $request->url = $this->container->config['global']['baseUrl'] . "/webhook";
         
-        $this->logger->addInfo("Registering hook", [ "request" => $request ]);
+        $this->logger->info("Registering hook", [ "request" => $request ]);
         
         $response = \Httpful\Request::put($installation->api_url . $uri)
             ->addHeader("Authorization", "Bearer " . $installation->access_token)
@@ -36,7 +36,25 @@ class HipChatService {
             ->expectsJson()
             ->send();
             
-        $this->logger->addInfo("Register hook response received", [ "response" => $response ]);
+        $this->logger->info("Register hook response received", [ "response" => $response ]);
+    }
+    
+    public function sendRoomNotification($installation, $message) {
+        $this->ensureToken($installation);
+        $uri = "room/{$installation->room_id}/notification";
+        
+        $request = $message;
+        
+        $this->logger->info("Sending room notification", [ "request" => $request ]);
+        
+        $response = \Httpful\Request::post($installation->api_url . $uri)
+            ->addHeader("Authorization", "Bearer " . $installation->access_token)
+            ->body($request)
+            ->sendsJson()
+            ->expectsJson()
+            ->send();
+            
+        $this->logger->info("Send room notification response received", [ "response" => $response ]);
     }
     
     private function getHookPattern($hookText) {
@@ -65,7 +83,7 @@ class HipChatService {
             ->expectsJson()
             ->send();
             
-       $this->logger->addInfo("Token response received", [ "response" => $response ]);
+       $this->logger->info("Token response received", [ "response" => $response ]);
 
        $expSeconds = $response->body->expires_in - 60;
        $exp = new \DateTime("now");
