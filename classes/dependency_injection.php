@@ -30,3 +30,7 @@ $container['db'] = function($c) use ($cfg) { return new \Spot\Locator($cfg); };
 $container['jwt'] = function($c) { return new \cbenard\JWTService($c); };
 
 $container['hipchat'] = function($c) { return new \cbenard\HipChatService($c); };
+
+$container['twitter'] = function($c) { return new \cbenard\TwitterService($c); };
+
+$container['globalSettings'] = function ($c) { return new \cbenard\GlobalSettingsService($c); };

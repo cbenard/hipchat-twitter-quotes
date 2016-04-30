@@ -9,18 +9,38 @@ class TwitterService {
     private $secret;
     private $bearer_token;
     private $client;
+    private $container;
     
-    public function __construct($key, $secret) {
-        $this->key = $key;
-        $this->secret = $secret;
+    public function __construct($container) {
+        $this->container = $container;
+        $this->key = $container->config['twitter']['key'];
+        $this->secret = $container->config['twitter']['secret'];
         $this->client = new Client();
     }
     
-    public function setBearerToken($bearer_token) {
-        $this->bearer_token = $bearer_token;
+    public function getUserInfo($screen_name) {
+        $this->runPreflightChecks();
+        
+        $params = [
+                'screen_name' => $screen_name,
+                'include_entities' => 'false'
+        ];
+        
+        $response = $this->client->api_request('users/show.json', $params);
+        
+        $item = json_decode($response);
+        $result = (object)array(
+            'created_at' => new \DateTime($item->created_at),
+            'id' => $item->id_str,
+            'profile_image_url_https' => $item->profile_image_url_https,
+            'name' => $item->name,
+            'screen_name' => $item->screen_name
+        );
+        
+        return $result;
     }
     
-    public function fetchTweetsSince($screen_name, $since_id = null) {
+    public function getTweetsSince($screen_name, $since_id = null) {
         $this->runPreflightChecks();
         
         $params = [
@@ -40,8 +60,8 @@ class TwitterService {
         
         $o = json_decode($response);
         $result = array_map(function($item) {
-            return array(
-                'created_at' => $item->created_at,
+            return (object)array(
+                'created_at' => new \DateTime($item->created_at),
                 'id' => $item->id_str,
                 'text' => $item->text,
                 'user_id' => $item->user->id_str
@@ -59,5 +79,13 @@ class TwitterService {
             $this->client->init_bearer_token($this->key, $this->secret);
             $this->bearer_token = $this->client->get_bearer_token();
         }
+    }
+    
+    public function getBearerToken() {
+        return $this->bearer_token;
+    }
+    
+    public function setBearerToken($bearer_token) {
+        $this->bearer_token = $bearer_token;
     }
 }
