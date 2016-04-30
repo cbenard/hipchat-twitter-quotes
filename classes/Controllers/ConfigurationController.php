@@ -16,7 +16,7 @@ class ConfigurationController {
     
     public function display(Request $request, Response $response, $args) {
         $this->container->logger->addInfo("Configuration Requested");
-        $jwt = $this->validateJwt($request);
+        $jwt = $this->container->jwt->validateRequest($request);
         
         $mapper = $this->container->db->mapper('\Entity\Installation');
         $installation = $mapper->first([ 'oauth_id' => $jwt->iss ]);
@@ -32,7 +32,7 @@ class ConfigurationController {
     public function update(Request $request, Response $response, $args) {
         $body = $request->getParsedBody();
         $this->container->logger->addInfo("Update Configuration Requested", [ 'request' => $body ]);
-        $jwt = $this->validateJwt($request);
+        $jwt = $this->container->jwt->validateRequest($request);
         
         $mapper = $this->container->db->mapper('\Entity\Installation');
         $oauth_id = $jwt->iss;
@@ -51,30 +51,5 @@ class ConfigurationController {
         ]);
 
         return $response;
-    }
-    
-    private function validateJwt($request) {
-        $encodedJwt = $this->getJwt($request);
-        $jwtResponse = $this->container->jwt->validateJwt($encodedJwt);
-        
-        return $jwtResponse;
-    }
-    
-    private function getJwt($request) {
-        $queryParams = $request->getQueryParams();
-        $headers = $request->getHeaders();
-        $encodedJwt = null;
-        
-        if (isset($queryParams['signed_request'])) {
-            $encodedJwt = $queryParams['signed_request'];
-        }
-        elseif (isset($headers['authorization'])) {
-            $encodedJwt = substr($headers['authorization'], 4, 0);
-        }
-        elseif (isset($headers['Authorization'])) {
-            $encodedJwt = substr($headers['Authorization'], 4, 0);
-        }
-        
-        return $encodedJwt;
     }
 }

@@ -13,6 +13,34 @@ class JWTService {
         $this->db = $container->db;
     }
     
+    public function validateRequest($request) {
+        $encodedJwt = $this->getJwt($request);
+        if (!$encodedJwt) {
+            throw new \Exception("Unable to find JWT token.");
+        }
+        $jwtResponse = $this->validateJwt($encodedJwt);
+        
+        return $jwtResponse;
+    }
+    
+    private function getJwt($request) {
+        $queryParams = $request->getQueryParams();
+        $headers = $request->getHeaders();
+        $encodedJwt = null;
+        
+        if (isset($queryParams['signed_request'])) {
+            $encodedJwt = $queryParams['signed_request'];
+        }
+        elseif (isset($headers['authorization'])) {
+            $encodedJwt = substr($headers['authorization'], 4, 0);
+        }
+        elseif (isset($headers['Authorization'])) {
+            $encodedJwt = substr($headers['Authorization'], 4, 0);
+        }
+        
+        return $encodedJwt;
+    }
+    
     public function validateJwt($jwt) {
         $this->container->logger->addInfo("JWT validation Requested", [ 'encoded' => $jwt ]);
         $jwtArray = explode('.', $jwt);

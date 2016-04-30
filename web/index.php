@@ -11,5 +11,6 @@ $app->post('/installed', '\Controllers\InstallationController:install');
 $app->get('/uninstalled', '\Controllers\InstallationController:uninstall');
 $app->get('/configure', '\Controllers\ConfigurationController:display');
 $app->post('/configure', '\Controllers\ConfigurationController:update');
+$app->post('/webhook', '\Controllers\WebHookController:trigger');
 
 $app->run();
