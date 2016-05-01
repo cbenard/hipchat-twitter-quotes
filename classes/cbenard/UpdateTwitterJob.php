@@ -105,6 +105,7 @@ class UpdateTwitterJob {
         }
         catch (\Exception $e) {
             $this->log("Error sending updated notification: " . $e);
+            $this->container->logger->error("Error sending updated notification", [ "exception" => $e ]);
         }
     }
     
