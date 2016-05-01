@@ -17,10 +17,13 @@ class StaticContentController {
     
         $baseUrl = $this->container->config['global']['baseUrl'];
         $integration_screenname = $this->container->config['hipchat']['screenname'];
+        $integration_avatarUrl = $this->container->config['hipchat']['avatarUrl'];
         
-        $response = $this->container->view->render($response, "capabilities.json",
-            ["base_url" => $baseUrl, "integration_screenname" => $integration_screenname]
-        )->withHeader('Content-Type','application/json;charset=utf-8');
+        $response = $this->container->view->render($response, "capabilities.json", [
+            "base_url" => $baseUrl,
+            "integration_screenname" => $integration_screenname,
+            "avatarUrl" => $integration_avatarUrl
+        ])->withHeader('Content-Type','application/json;charset=utf-8');
 
         return $response;
     }

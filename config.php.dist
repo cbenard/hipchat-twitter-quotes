@@ -27,3 +27,4 @@ $config['global']['timezone'] = "REQUIRED_FILL_IN"; // Example: America/Chicago
 
 // HipChat
 $config['hipchat']['screenname'] = "REQUIRED_FILL_IN";
+$config['hipchat']['avatarUrl'] = null; // Fully qualified URL if desired

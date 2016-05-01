@@ -19,7 +19,11 @@ $baseUrl = $data['base_url'];
             "scopes": [
                 "send_notification",
                 "view_messages"
-            ]
+            ]<?php if ($data['avatarUrl']): ?>,
+            "avatar": {
+                url: "<?=$data['avatarUrl']?>"
+            }
+<?php endif; ?>
         },
         "installable": {
             "allowGlobal": false,
