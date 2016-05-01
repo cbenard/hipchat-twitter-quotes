@@ -66,6 +66,8 @@ class HipChatService {
             $hookRegex .= "[" . strtolower($char) . strtoupper($char) . "]";
         }
         
+        $hookRegex .= "(\$| .+)";
+        
         return $hookRegex;
     }
     
