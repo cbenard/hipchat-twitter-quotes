@@ -23,15 +23,17 @@ class UpdateTwitterJob {
         $twitter_token = $this->globalSettings->getTwitterToken();
         
         if ($twitter_token) {
-            $this->log("Using previous Twitter bearer token.");
+            $this->log("Using previous Twitter bearer token.\r\n");
             $this->twitter->setBearerToken($twitter_token);
         }
 
         $accounts = $this->getAccounts();
         
         foreach ($accounts as $twitter_screenname) {
-            $this->updateAccountInformation($twitter_screenname);
-            $this->updateTweets($twitter_screenname);
+            $newCount = $this->updateTweets($twitter_screenname);
+            if ($newCount) {
+                $this->updateAccountInformation($twitter_screenname);
+            }
         }
 
         if (!$twitter_token && $this->twitter->getBearerToken()) {
@@ -107,6 +109,8 @@ class UpdateTwitterJob {
             $this->log("Error sending updated notification: " . $e);
             $this->container->logger->error("Error sending updated notification", [ "exception" => $e ]);
         }
+        
+        return $tweets ? count($tweets) : false;
     }
     
     private function sendUpdatedNotification($twitter_screenname, $count) {
