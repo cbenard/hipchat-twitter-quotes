@@ -8,10 +8,12 @@ use \Psr\Http\Message\ResponseInterface as Response;
 class ConfigurationController {
     private $container;
     private $hipchat;
+    private $csrf;
     
     public function __construct($container) {
         $this->container = $container;
         $this->hipchat = $container->hipchat;
+        $this->csrf = $container->csrf;
     }
     
     public function display(Request $request, Response $response, $args) {
@@ -23,7 +25,12 @@ class ConfigurationController {
         
         $response = $this->container->view->render($response, "configure.phtml", [
             "screen_name" => $installation->twitter_screenname,
-            "webhook_trigger" => $installation->webhook_trigger
+            "webhook_trigger" => $installation->webhook_trigger,
+
+            "csrf_nameKey" => $this->csrf->getTokenNameKey(),
+            "csrf_valueKey" => $this->csrf->getTokenValueKey(),
+            "csrf_name" => $request->getAttribute($this->csrf->getTokenNameKey()),
+            "csrf_value" => $request->getAttribute($this->csrf->getTokenValueKey()),
         ]);
 
         return $response;

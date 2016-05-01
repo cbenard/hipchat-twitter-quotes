@@ -38,3 +38,5 @@ $container['twitter'] = function($c) { return new \cbenard\TwitterService($c); }
 $container['globalSettings'] = function ($c) { return new \cbenard\GlobalSettingsService($c); };
 
 $container['updatetwitterjob'] = function ($c) { return new \cbenard\UpdateTwitterJob($c); };
+
+$container['csrf'] = function ($c) { return new \Slim\Csrf\Guard; };

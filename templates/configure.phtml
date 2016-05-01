@@ -12,15 +12,17 @@
         <form method="POST">
             <div>
                 <label for="screen_name">Twitter Screen Name:</label>
-                <input name="screen_name" id="screen_name" type="text" maxlength="50" value="<?=$data['screen_name']?>"?>
+                <input name="screen_name" id="screen_name" type="text" maxlength="50" value="<?= $screen_name ?>"?>
             </div>
             <div>
                 <label for="webhook_trigger">Web Hook Trigger (Example: /tq):</label>
-                <input name="webhook_trigger" id="webhook_trigger" type="text" maxlength="50" value="<?=$data['webhook_trigger']?>"?>
+                <input name="webhook_trigger" id="webhook_trigger" type="text" maxlength="50" value="<?= $webhook_trigger ?>"?>
             </div>
             <div>
                 <input type="submit" value="Save" />
             </div>
+            <input type="hidden" name="<?= $csrf_nameKey ?>" value="<?= $csrf_name ?>">
+            <input type="hidden" name="<?= $csrf_valueKey ?>" value="<?= $csrf_value ?>">
         </form>
 
         <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
