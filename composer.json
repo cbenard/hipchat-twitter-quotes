@@ -6,6 +6,7 @@
         "monolog/monolog": "^1.19",
         "slim/php-view": "^2.1",
         "firebase/php-jwt": "^3.0",
-        "nategood/httpful": "^0.2.20"
+        "nategood/httpful": "^0.2.20",
+        "ramsey/uuid": "^3.4"
     }
 }
