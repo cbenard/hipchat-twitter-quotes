@@ -18,8 +18,7 @@ $baseUrl = $data['base_url'];
             "fromName": "<?=$data['integration_screenname']?>",
             "scopes": [
                 "send_notification",
-                "view_messages",
-                "admin_room"
+                "view_messages"
             ]
         },
         "installable": {
