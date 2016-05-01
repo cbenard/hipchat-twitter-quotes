@@ -127,7 +127,8 @@ class UpdateTwitterJob {
                 $itistheyare = $count != 1 ? "They are" : "It is";
                 $message->message = "I have noticed that {$tweetplurality} been added by "
                     . "<a href=\"https://twitter.com/{$installation->twitter_screenname}\">@{$installation->twitter_screenname}</a>. "
-                    . "{$itistheyare} now available for use with this integration.";
+                    . "{$itistheyare} now available for use with this integration.<br /><br />"
+                    . "Try typing <strong><code>{$installation->webhook_trigger} latest</code></strong> to see the latest tweet.";
                 
                 $this->hipchat->sendRoomNotification($installation, $message);
             }

@@ -10,6 +10,20 @@
         </head>
     <body>
         <form method="POST">
+            <?php if (isset($errors) && count($errors)): ?>
+            <div class="alert alert-danger">
+                <ul><?php foreach ($errors as $elementName => $subErrors): ?>
+                    <?php foreach ($subErrors as $error): ?>
+                        <li><strong><?= $elementName ?>:</strong> <?= $error ?></li>
+                    <?php endforeach; ?>
+                <?php endforeach; ?></ul>
+            </div>
+            <?php endif; ?>
+            <?php if (isset($success) && $success): ?>
+            <div class="alert alert-success">
+                <?= $success ?>
+            </div>
+            <?php endif; ?>
             <div>
                 <label for="screen_name">Twitter Screen Name:</label>
                 <input name="screen_name" id="screen_name" type="text" maxlength="50" value="<?= $screen_name ?>"?>

@@ -9,11 +9,13 @@ class ConfigurationController {
     private $container;
     private $hipchat;
     private $csrf;
+    private $configureValidation;
     
     public function __construct($container) {
         $this->container = $container;
         $this->hipchat = $container->hipchat;
         $this->csrf = $container->csrf;
+        $this->configureValidation = $container->configureValidation;
     }
     
     public function display(Request $request, Response $response, $args) {
@@ -45,31 +47,42 @@ class ConfigurationController {
         $oauth_id = $jwt->iss;
         $installation = $mapper->first([ 'oauth_id' => $oauth_id ]);
         
-        $installation->twitter_screenname = $body['screen_name'];
+        $installation->twitter_screenname = strtolower($body['screen_name']);
         $installation->webhook_trigger = $body['webhook_trigger'];
+        $successMessage = null;
         
-        $this->hipchat->registerhook($installation);
-        
-        $mapper->save($installation);
-        
-        try {
-            $this->sendReconfigureMessage($installation);
-        }
-        catch (\Exception $e) {
-            $this->container->logger->error("Error sending configuration message", [ "exception" => $e ]);
-        }
-        
-        try {
-            // Refresh tweets now
-            $this->container->updatetwitterjob->update();
-        }
-        catch (\Exception $e) {
-            $this->container->logger->error("Error fetching new tweets after reconfiguration", [ "exception" => $e ]);
+        if(!$this->configureValidation->hasErrors()) {
+            $this->hipchat->registerhook($installation);
+            
+            $mapper->save($installation);
+            $successMessage = "Saved successfully.";
+            
+            try {
+                $this->sendReconfigureMessage($installation);
+            }
+            catch (\Exception $e) {
+                $this->container->logger->error("Error sending configuration message", [ "exception" => $e ]);
+            }
+            
+            try {
+                // Refresh tweets now
+                $this->container->updatetwitterjob->update();
+            }
+            catch (\Exception $e) {
+                $this->container->logger->error("Error fetching new tweets after reconfiguration", [ "exception" => $e ]);
+            }
         }
         
         $response = $this->container->view->render($response, "configure.phtml", [
             "screen_name" => $installation->twitter_screenname,
-            "webhook_trigger" => $installation->webhook_trigger
+            "webhook_trigger" => $installation->webhook_trigger,
+            "errors" => $this->configureValidation->getErrors(),
+            "success" => $successMessage,
+
+            "csrf_nameKey" => $this->csrf->getTokenNameKey(),
+            "csrf_valueKey" => $this->csrf->getTokenValueKey(),
+            "csrf_name" => $request->getAttribute($this->csrf->getTokenNameKey()),
+            "csrf_value" => $request->getAttribute($this->csrf->getTokenValueKey()),
         ]);
 
         return $response;
@@ -82,7 +95,8 @@ class ConfigurationController {
         $message->color = "yellow";
         $message->message = "I have been reconfigured. I am now monitoring "
             . "<a href=\"https://twitter.com/{$installation->twitter_screenname}\">@{$installation->twitter_screenname}</a> "
-            . "and listening for the trigger <code>{$installation->webhook_trigger}</code>.";
+            . "and listening for the trigger <strong><code>{$installation->webhook_trigger}</code></strong>.<br /><br />"
+            . "Try typing <strong><code>{$installation->webhook_trigger} help</code></strong> for more information.";
         
         $this->hipchat->sendRoomNotification($installation, $message);
     }

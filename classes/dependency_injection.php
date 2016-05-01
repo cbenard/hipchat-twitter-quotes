@@ -1,5 +1,7 @@
 <?php
 
+use Respect\Validation\Validator as v;
+
 $container = new \Slim\Container;
 
 $container['mode'] = $config['app']['debug'] ? "development" : "production";
@@ -40,3 +42,15 @@ $container['globalSettings'] = function ($c) { return new \cbenard\GlobalSetting
 $container['updatetwitterjob'] = function ($c) { return new \cbenard\UpdateTwitterJob($c); };
 
 $container['csrf'] = function ($c) { return new \Slim\Csrf\Guard; };
+
+$container['configureValidation'] = function () {
+  //Create the validators
+  $accountValidator = v::alnum('-_')->noWhitespace()->length(1, 50);
+  $triggerValidator = v::regex('/^\\/\\w+$/')->length(1, 20);
+  $validators = array(
+    'screen_name' => $accountValidator,
+    'webhook_trigger' => $triggerValidator
+  );
+
+  return new \DavidePastore\Slim\Validation\Validation($validators);
+};

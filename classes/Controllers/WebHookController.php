@@ -52,7 +52,7 @@ class WebHookController {
             "installation" => $installation
         ]);
         
-        $message = strip_tags($request->getParsedBody()['item']['message']['message']);
+        $message = trim(strip_tags($request->getParsedBody()['item']['message']['message']));
         
         $respData = null;
         
@@ -82,6 +82,9 @@ class WebHookController {
         elseif (count($words) == 2 && strtolower($words[1]) == "help") {
             return $this->usage($installation);
         }
+        elseif (count($words) == 2 && strtolower($words[1]) == "latest") {
+            return $this->latest($installation);
+        }
         else {
             $arguments = array_slice($words, 1);
             return $this->quoteSearch($installation, $arguments);
@@ -91,13 +94,34 @@ class WebHookController {
     private function randomQuote($installation) {
         $this->container->logger->info("Random quote requested");
         $tweet = $this->tweetMapper
-            ->query("SELECT * FROM `tweets` ORDER BY rand() LIMIT 1")
+            ->query("SELECT * FROM `tweets` WHERE `screen_name` = ? ORDER BY rand() LIMIT 1",
+                [ $installation->twitter_screenname ])
             ->first();
         
         $respData = new \stdClass;
         
         if (!$tweet) {
             $respData->message = "I couldn't find a random tweet. Maybe I haven't had time to update my list of tweets, yet.";
+            $respData->color = "red";
+        }
+        else {
+            $respData = $this->createMessageForTweet($tweet);
+        }
+        
+        return $respData;
+    }
+    
+    private function latest($installation) {
+        $this->container->logger->info("Latest quote requested");
+        $tweet = $this->tweetMapper
+            ->where([ 'screen_name' => $installation->twitter_screenname ])
+            ->order([ 'created_at' => 'DESC' ])
+            ->first();
+        
+        $respData = new \stdClass;
+        
+        if (!$tweet) {
+            $respData->message = "I couldn't find the latest tweet. Maybe I haven't had time to update my list of tweets, yet.";
             $respData->color = "red";
         }
         else {
@@ -115,7 +139,8 @@ class WebHookController {
         $tweet = $this->tweetMapper
             ->query("SELECT * FROM `tweets` "
                 . "WHERE `text` LIKE ? "
-                . "ORDER BY created_at DESC LIMIT 1", [ "%{$argString}%" ])
+                . "AND `screen_name` = ? "
+                . "ORDER BY created_at DESC LIMIT 1", [ "%{$argString}%", $installation->twitter_screenname ])
             ->first();
             
         if (!$tweet) {
@@ -124,17 +149,19 @@ class WebHookController {
             $tweet = $this->tweetMapper
                 ->query("SELECT * FROM `tweets` "
                     . "WHERE `text` LIKE ? "
-                    . "ORDER BY created_at DESC LIMIT 1", [ "%{$likeArgs}%" ])
+                    . "AND `screen_name` = ? "
+                    . "ORDER BY created_at DESC LIMIT 1", [ "%{$likeArgs}%", $installation->twitter_screenname ])
                 ->first();
         }
             
         if (!$tweet) {
             // Try with all words in any order
             $likeArgs = array_map(function($item) { return "%{$item}%"; }, $arguments);
+            array_unshift($likeArgs, $installation->twitter_screenname);
             $tweet = $this->tweetMapper
                 ->query("SELECT * FROM `tweets` "
-                    . "WHERE 1=1 "
-                    . str_repeat(" AND `text` LIKE ? ", count($likeArgs))
+                    . "WHERE `screen_name` = ? "
+                    . str_repeat(" AND `text` LIKE ? ", count($likeArgs) - 1)
                     . "ORDER BY created_at DESC LIMIT 1", $likeArgs)
                 ->first();
         }
@@ -142,11 +169,14 @@ class WebHookController {
         if (!$tweet) {
             // Try with any words in any order
             $likeArgs = array_map(function($item) { return "%{$item}%"; }, $arguments);
+            array_push($likeArgs, $installation->twitter_screenname);
             $tweet = $this->tweetMapper
                 ->query("SELECT * FROM `tweets` "
                     . "WHERE ("
-                    . substr(str_repeat(" OR `text` LIKE ? ", count($likeArgs)), 4)
-                    . ") ORDER BY created_at DESC LIMIT 1", $likeArgs)
+                    . substr(str_repeat(" OR `text` LIKE ? ", count($likeArgs) - 1), 4)
+                    . ") "
+                    . "AND `screen_name` = ? "
+                    ."ORDER BY created_at DESC LIMIT 1", $likeArgs)
                 ->first();
         }
         
@@ -171,6 +201,7 @@ class WebHookController {
         $respData->message = "<strong>Twitter Quotes Help</strong><br/><ul>"
             . "<li><strong><code>{$installation->webhook_trigger}</code></strong> &ndash; Random quote</li>"
             . "<li><strong><code>{$installation->webhook_trigger} help</code></strong> &ndash; This help message</li>"
+            . "<li><strong><code>{$installation->webhook_trigger} latest</code></strong> &ndash; The latest tweet from the monitored account</li>"
             . "<li><strong><code>{$installation->webhook_trigger} search text</code></strong> &ndash; Most recent matching quote for search text</li>"
             . "</ul>";
             
@@ -194,7 +225,7 @@ class WebHookController {
         // $respData->card->thumbnail->url = $user->profile_image_url_https;
         $respData->card->title = "{$user->name}";
         if ($user->screen_name != $user->name) {
-            $respData->card->title .= "({$user->screen_name})";
+            $respData->card->title .= " (@{$user->screen_name})";
         }
         $respData->card->id = Uuid::uuid4()->toString();
         $respData->card->icon = new \stdClass;

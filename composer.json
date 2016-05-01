@@ -14,6 +14,7 @@
         "firebase/php-jwt": "^3.0",
         "nategood/httpful": "^0.2.20",
         "ramsey/uuid": "^3.4",
-        "slim/csrf": "dev-allow-paragonie-random_compat-2.0"
+        "slim/csrf": "dev-allow-paragonie-random_compat-2.0",
+        "davidepastore/slim-validation": "^0.1.0"
     }
 }

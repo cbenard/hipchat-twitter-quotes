@@ -3,7 +3,7 @@ $baseUrl = $data['base_url'];
 
 ?>{
     "name": "Twitter Quotes",
-    "description": "Provides searchable Twitter quotes.",
+    "description": "This HipChat integration provides searchable and random Twitter quotes from a monitored account.",
     "key": "hipchat-twitter-quotes",
     "links": {
         "homepage": "https://github.com/cbenard/hipchat-twitter-quotes",
