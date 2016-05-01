@@ -8,6 +8,7 @@
 
 // Slim
 $config['app']['debug'] = false; // Set to true for Debug
+$config['app']['log'] = __DIR__ . "/logs/app.log"; // Set to null to not log
 
 // Twitter
 $config['twitter']['key'] = "REQUIRED_FILL_IN";
