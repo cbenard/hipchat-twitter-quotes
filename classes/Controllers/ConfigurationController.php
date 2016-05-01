@@ -52,6 +52,14 @@ class ConfigurationController {
             $this->container->logger->error("Error sending configuration message", [ "exception" => $e ]);
         }
         
+        try {
+            // Refresh tweets now
+            $this->container->updatetwitterjob->update();
+        }
+        catch (\Exception $e) {
+            $this->container->logger->error("Error fetching new tweets after reconfiguration", [ "exception" => $e ]);
+        }
+        
         $response = $this->container->view->render($response, "configure.phtml", [
             "screen_name" => $installation->twitter_screenname,
             "webhook_trigger" => $installation->webhook_trigger
