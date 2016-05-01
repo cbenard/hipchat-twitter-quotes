@@ -9,6 +9,29 @@ This application fetches tweets from an account on a regular basis and provides 
 5. Redirect all non-found requests to the `web/index.php` front controller.
   * `.htaccess`/`VirtualHost` definition on Apache
   * `try_files` directive in nginx config.
+6. Run `./composer-install.sh` in the project root to install [Composer](https://getcomposer.org) and all the project dependencies.
+7. Create the database schema by running `php commands/db_migrations.php` in the project root.
+  * This may need to be run after any upgrades of the project as well.
+8. Schedule `php commands/update_twitter.php` as a cron job as often as you'd like Twitter statuses to be updated.
+  * Only statuses newer than the latest are fetched, so this uses very little data.
+9. Add the integration to your HipChat rooms using the URL format:
+  * `https://your_base_url/capabilities.json`
+10. Configure the Twitter account to monitor and the trigger command in the integration's Configure tab.
+
+## Usage
+If your trigger is `/tq`, you can use the following commands:
+* **`/tq`** &mdash; Random quote
+* **`/tq help`** &mdash; These usage instructions
+* **`/tq search text`** &mdash; Quote matching the search text
+  * First, exact phrase is searched.
+  * Second, all words in the order provided.
+  * Third, all words, without considering order.
+  * Fourth, any of the words.
+  * In all cases, the most recent Tweet match is used.
+ 
+
+## Notes
+1. This was developed using PHP 5.6. It will probably work with PHP 5.5. I don't know about anything lower than that.
 
 ## Contributing
 Pull requests are welcome and will be reviewed promptly.
