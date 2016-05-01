@@ -32,7 +32,10 @@ If your trigger is `/tq`, you can use the following commands:
 
 ## Screenshots
 
+### Configuration
 ![Configuring](https://raw.githubusercontent.com/cbenard/hipchat-twitter-quotes/master/web/assets/images/twitterquotes-screenshot-configure.png)
+
+### Usage
 ![Usage 1](https://raw.githubusercontent.com/cbenard/hipchat-twitter-quotes/master/web/assets/images/twitterquotes-screenshot-usage-1.png)
 ![Usage 2](https://raw.githubusercontent.com/cbenard/hipchat-twitter-quotes/master/web/assets/images/twitterquotes-screenshot-usage-2.png)
 
