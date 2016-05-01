@@ -6,7 +6,7 @@ $container['mode'] = $config['app']['debug'] ? "development" : "production";
 $container['debug'] = $config['app']['debug'];
 $container['displayErrorDetails'] = $config['app']['debug'];
 
-$container['logger'] = function($c) {
+$container['logger'] = function($c) use ($config) {
     $logger = new \Monolog\Logger('my_logger');
     if ($config['app']['log']) {
         $file_handler = new \Monolog\Handler\StreamHandler($config['app']['log']);

@@ -21,7 +21,7 @@ $baseUrl = $data['base_url'];
                 "view_messages"
             ]<?php if ($data['avatarUrl']): ?>,
             "avatar": {
-                url: "<?=$data['avatarUrl']?>"
+                "url": "<?=$data['avatarUrl']?>"
             }
 <?php endif; ?>
         },
