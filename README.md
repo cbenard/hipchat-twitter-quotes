@@ -22,13 +22,19 @@ This application fetches tweets from an account on a regular basis and provides 
 If your trigger is `/tq`, you can use the following commands:
 * **`/tq`** &mdash; Random quote
 * **`/tq help`** &mdash; These usage instructions
+* **`/tq latest`** &mdash; The latest tweet from the monitored account
 * **`/tq search text`** &mdash; Quote matching the search text
   * First, exact phrase is searched.
   * Second, all words in the order provided.
   * Third, all words, without considering order.
   * Fourth, any of the words.
   * In all cases, the most recent Tweet match is used.
- 
+
+## Screenshots
+
+![Configuring](https://raw.githubusercontent.com/cbenard/hipchat-twitter-quotes/master/web/assets/images/twitterquotes-screenshot-configure.png)
+![Usage 1](https://raw.githubusercontent.com/cbenard/hipchat-twitter-quotes/master/web/assets/images/twitterquotes-screenshot-usage-1.png)
+![Usage 2](https://raw.githubusercontent.com/cbenard/hipchat-twitter-quotes/master/web/assets/images/twitterquotes-screenshot-usage-2.png)
 
 ## Notes
 1. This was developed using PHP 5.6. It will probably work with PHP 5.5. I don't know about anything lower than that.

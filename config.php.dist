@@ -22,9 +22,9 @@ $config['db']['main']['password'] = "REQUIRED_FILL_IN";
 $config['db']['main']['driver'] = "pdo_mysql";
 
 // Global
-$config['global']['baseUrl'] = "REQUIRED_FILL_IN"; // No trailing slash
+$config['global']['baseUrl'] = "REQUIRED_FILL_IN"; // No trailing slash. HTTPS required
 $config['global']['timezone'] = "REQUIRED_FILL_IN"; // Example: America/Chicago
 
 // HipChat
-$config['hipchat']['screenname'] = "REQUIRED_FILL_IN";
-$config['hipchat']['avatarUrl'] = $config['global']['baseUrl'] . "/quote_avatar.png"; // Fully qualified URL if desired
+$config['hipchat']['screenname'] = "Twitter Quotes";
+$config['hipchat']['avatarUrl'] = $config['global']['baseUrl'] . "/assets/images/quote_avatar.png"; // Fully qualified URL if desired
