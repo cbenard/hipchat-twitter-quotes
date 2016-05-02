@@ -40,7 +40,7 @@ If your trigger is `/tq`, you can use the following commands:
 ![Usage 2](https://raw.githubusercontent.com/cbenard/hipchat-twitter-quotes/master/web/assets/images/twitterquotes-screenshot-usage-2.png)
 
 ## Notes
-1. This was developed using PHP 5.6. It will probably work with PHP 5.5. I don't know about anything lower than that.
+This was developed using PHP 5.6. It should work with a **minimum of PHP 5.5**.
 
 ## Contributing
 Pull requests are welcome and will be reviewed promptly.
