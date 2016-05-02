@@ -9,6 +9,7 @@ require_once("../common.php");
 
 $app = new \Slim\App($container);
 
+$app->get('/', '\Controllers\StaticContentController:index');
 $app->get('/capabilities.json', '\Controllers\StaticContentController:capabilities');
 $app->post('/installed', '\Controllers\InstallationController:install');
 $app->get('/uninstalled', '\Controllers\InstallationController:uninstall');

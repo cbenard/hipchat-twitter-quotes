@@ -27,4 +27,8 @@ class StaticContentController {
 
         return $response;
     }
+    
+    public function index(Request $request, Response $response, $args) {
+        return $response->withStatus(301)->withHeader('Location', 'https://github.com/cbenard/hipchat-twitter-quotes');
+    }
 }
