@@ -203,7 +203,9 @@ class WebHookController {
             . "<li><strong><code>{$installation->webhook_trigger} help</code></strong> &ndash; This help message</li>"
             . "<li><strong><code>{$installation->webhook_trigger} latest</code></strong> &ndash; The latest tweet from the monitored account</li>"
             . "<li><strong><code>{$installation->webhook_trigger} search text</code></strong> &ndash; Most recent matching quote for search text</li>"
-            . "</ul>";
+            . "</ul>"
+            . "<br />"
+            . "<em>Twitter Quotes for HipChat is an <a href=\"https://github.com/cbenard/hipchat-twitter-quotes\">open source project</a> by <a href=\"https://chrisbenard.net\">Chris Benard</a></em>.";
             
         return $respData;
     }
