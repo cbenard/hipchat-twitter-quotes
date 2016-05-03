@@ -214,17 +214,16 @@ class WebHookController {
         $user = $this->userMapper->first([ 'id' => $tweet->user_id ]);
         
         $respData = new \stdClass;
-        $respData->message = $tweet->text;
+        $respData->message = "<strong><a href=\"https://twitter.com/statuses/{$tweet->tweet_id}\">@{$user->screen_name}</a></strong>: {$tweet->text}";
+        $respData->message_format = "html";
         
         $respData->card = new \stdClass;
         $respData->card->style = "link";
         $respData->card->description = new \stdClass;
         $respData->card->description->value = $tweet->text;
         $respData->card->description->format = "text";
-        $respData->card->format = "compact";
+        $respData->card->format = "medium";
         $respData->card->url = "https://twitter.com/statuses/{$tweet->tweet_id}";
-        // $respData->card->thumbnail = new \stdClass;
-        // $respData->card->thumbnail->url = $user->profile_image_url_https;
         $respData->card->title = "{$user->name}";
         if ($user->screen_name != $user->name) {
             $respData->card->title .= " (@{$user->screen_name})";
@@ -232,8 +231,8 @@ class WebHookController {
         $respData->card->id = Uuid::uuid4()->toString();
         $respData->card->icon = new \stdClass;
         $respData->card->icon->url = $user->profile_image_url_https;
-        
-        $this->container->logger->info("Created card for tweet", [ "card" => $respData->card ]);
+
+        $this->container->logger->info("Created message for tweet", [ "card" => $respData->card ]);
         
         return $respData;
     }
