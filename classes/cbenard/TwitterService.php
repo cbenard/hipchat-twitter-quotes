@@ -71,6 +71,36 @@ class TwitterService {
         return $result;
     }
     
+    public function getTweetsBefore($screen_name, $before_id = null) {
+        $this->runPreflightChecks();
+        
+        $params = [
+                'screen_name' => $screen_name,
+                'count' => 200,
+                'trim_user' => 'true',
+                'exclude_replies' => 'true',
+                'contributor_details' => 'false',
+                'include_rts' => 'false',
+                'max_id' => $before_id
+        ];
+        
+        $response = $this->client->api_request('statuses/user_timeline.json', $params);
+        
+        $o = json_decode($response);
+        $result = array_map(function($item) {
+            return (object)array(
+                'created_at' => new \DateTime($item->created_at),
+                'id' => $item->id_str,
+                'text' => $item->text,
+                'user_id' => $item->user->id_str
+            );
+        }, $o);
+        
+        $result = array_filter($result, function ($item) use ($before_id) { return $item->id != $before_id; });
+        
+        return $result;
+    }
+    
     private function runPreflightChecks() {
         if ($this->bearer_token) {
             $this->client->set_bearer_token($this->bearer_token);
