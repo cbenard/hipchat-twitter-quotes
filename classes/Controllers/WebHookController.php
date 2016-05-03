@@ -212,9 +212,14 @@ class WebHookController {
     
     private function createMessageForTweet($tweet) {
         $user = $this->userMapper->first([ 'id' => $tweet->user_id ]);
+
+        // Convert new lines to <br/>
+        $htmlText = str_replace("\r\n", "\n", $tweet->text);
+        $htmlText = str_replace("\r", "\n", $htmlText);
+        $htmlText = str_replace("\n", "<br />", $htmlText);
         
         $respData = new \stdClass;
-        $respData->message = "<strong><a href=\"https://twitter.com/statuses/{$tweet->tweet_id}\">@{$user->screen_name}</a></strong>: {$tweet->text}";
+        $respData->message = "<strong><a href=\"https://twitter.com/statuses/{$tweet->tweet_id}\">@{$user->screen_name}</a></strong>: {$htmlText}";
         $respData->message_format = "html";
         
         $respData->card = new \stdClass;
