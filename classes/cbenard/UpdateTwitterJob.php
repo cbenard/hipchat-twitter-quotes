@@ -122,7 +122,7 @@ class UpdateTwitterJob {
             $this->container->logger->error("Error sending updated notification", [ "exception" => $e ]);
         }
         
-        return $tweets ? count($tweets) : false;
+        return $tweets ? $initialCount : false;
     }
     
     private function saveTweets($twitter_screenname, $tweets, $mapper) {

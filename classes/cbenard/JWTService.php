@@ -32,10 +32,15 @@ class JWTService {
             $encodedJwt = $queryParams['signed_request'];
         }
         elseif (isset($headers['authorization'])) {
-            $encodedJwt = substr($headers['authorization'], 4, 0);
+            $encodedJwt = substr($headers['authorization'], 4);
         }
         elseif (isset($headers['Authorization'])) {
-            $encodedJwt = substr($headers['Authorization'], 4, 0);
+            $encodedJwt = substr($headers['Authorization'], 4);
+        }
+        elseif (isset($headers['HTTP_AUTHORIZATION'])
+            && is_array($headers['HTTP_AUTHORIZATION'])
+            && count($headers['HTTP_AUTHORIZATION'])) {
+            $encodedJwt = substr($headers['HTTP_AUTHORIZATION'][0], 4);
         }
         
         return $encodedJwt;

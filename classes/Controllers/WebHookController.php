@@ -33,19 +33,13 @@ class WebHookController {
             "message" => $request->getParsedBody()['item']['message']['message']
         ]);
         
-        // HipChat doesn't appear to be sending the JWT with the web hook.
-        // I believe this is a bug.
+        $jwt = $this->jwt->validateRequest($request);
         
-        // $jwt = $this->jwt->validateRequest($request);
+        $this->container->logger->info("Web Hook JWT validated", [
+            "jwt" => $jwt
+        ]);
         
-        // $this->container->logger->info("Web Hook JWT validated", [
-        //     "jwt" => $jwt
-        // ]);
-        
-        // $oauth_id = $jwt->iss;
-        
-        // Have to get it from the unauthenticated request instead of JWT due to issue above
-        $oauth_id = $request->getParsedBody()['oauth_client_id'];
+        $oauth_id = $jwt->iss;
         $installation = $this->installationMapper->first([ 'oauth_id' => $oauth_id ]);
         
         $this->container->logger->info("Web Hook installation fetched", [
