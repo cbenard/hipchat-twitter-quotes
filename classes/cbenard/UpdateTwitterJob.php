@@ -79,42 +79,35 @@ class UpdateTwitterJob {
     
     private function updateTweets($twitter_screenname) {
         $mapper = $this->db->mapper('\Entity\Tweet');
-        $max_tweet = $mapper
-            ->query("select * from `tweets` where `screen_name` = ? "
-                . "order by char_length(`tweet_id`) DESC, `tweet_id` DESC "
-                . "LIMIT 1", [ $twitter_screenname ])
-            ->first();
+        $max_tweet = $mapper->latest($twitter_screenname);
         $max_tweet_id = $max_tweet ? $max_tweet->tweet_id : null;
         
         $tweets = $this->twitter->getTweetsSince($twitter_screenname, $max_tweet_id);
         $this->log("Retrieved tweets for @{$twitter_screenname}...");
 
         $initialCount = count($tweets);
-        $this->saveTweets($twitter_screenname, $tweets, $mapper);        
+        $mapper->saveTweets($twitter_screenname, $tweets);        
         $this->log("Saved {$initialCount}.\r\n");
 
         $backfillCount = 0;
         
         if ($max_tweet) {
-            $min_tweet = $mapper
-                ->query("select * from `tweets` where `screen_name` = ? "
-                    . "order by char_length(`tweet_id`) ASC, `tweet_id` ASC "
-                    . "LIMIT 1", [ $twitter_screenname ])
-                ->first();
+            $min_tweet = $mapper->earliest($twitter_screenname);
             
             if ($min_tweet) {
                 $backfillTweets = $this->twitter->getTweetsBefore($twitter_screenname, $min_tweet->tweet_id);
                 $this->log("Retrieving backfill tweets for @{$twitter_screenname}...");
 
                 $backfillCount = count($backfillTweets);
-                $this->saveTweets($twitter_screenname, $backfillTweets, $mapper);
+                $mapper->saveTweets($twitter_screenname, $backfillTweets, $mapper);
                 $this->log("Saved {$backfillCount}.\r\n");
             }
         }
         
         try {
             if ($initialCount) {
-                $this->sendUpdatedNotification($twitter_screenname, $initialCount, $backfillCount);
+                // Disabled for now. User feedback said this was annoying. May be configurable later.
+                // $this->sendUpdatedNotification($twitter_screenname, $initialCount, $backfillCount);
             }
         }
         catch (\Exception $e) {
@@ -123,18 +116,6 @@ class UpdateTwitterJob {
         }
         
         return $tweets ? $initialCount : false;
-    }
-    
-    private function saveTweets($twitter_screenname, $tweets, $mapper) {
-        foreach ($tweets as $tweet) {
-            $dbTweet = $mapper->create([
-                'tweet_id' => $tweet->id,
-                'created_at' => $tweet->created_at,
-                'text' => $tweet->text,
-                'user_id' => $tweet->user_id,
-                'screen_name' => $twitter_screenname
-            ]);
-        }
     }
     
     private function sendUpdatedNotification($twitter_screenname, $count, $backfillCount) {

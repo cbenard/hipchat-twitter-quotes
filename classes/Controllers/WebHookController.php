@@ -87,11 +87,7 @@ class WebHookController {
     
     private function randomQuote($installation) {
         $this->container->logger->info("Random quote requested");
-        $tweet = $this->tweetMapper
-            ->query("SELECT * FROM `tweets` WHERE `screen_name` = ? ORDER BY rand() LIMIT 1",
-                [ $installation->twitter_screenname ])
-            ->first();
-        
+        $tweet = $this->tweetMapper->random($installation->twitter_screenname);
         $respData = new \stdClass;
         
         if (!$tweet) {
@@ -107,11 +103,7 @@ class WebHookController {
     
     private function latest($installation) {
         $this->container->logger->info("Latest quote requested");
-        $tweet = $this->tweetMapper
-            ->where([ 'screen_name' => $installation->twitter_screenname ])
-            ->order([ 'created_at' => 'DESC' ])
-            ->first();
-        
+        $tweet = $this->tweetMapper->latest($installation->twitter_screenname);
         $respData = new \stdClass;
         
         if (!$tweet) {
@@ -126,54 +118,8 @@ class WebHookController {
     }
     
     private function quoteSearch($installation, $arguments) {
-        $argString = implode(" ", $arguments);
-        $this->container->logger->info("Quote search requested", [ "arguments" => $argString ]);
-        
-        // Try for a direct match
-        $tweet = $this->tweetMapper
-            ->query("SELECT * FROM `tweets` "
-                . "WHERE `text` LIKE ? "
-                . "AND `screen_name` = ? "
-                . "ORDER BY created_at DESC LIMIT 1", [ "%{$argString}%", $installation->twitter_screenname ])
-            ->first();
-            
-        if (!$tweet) {
-            // Try with words in order
-            $likeArgs = implode("%", $arguments);
-            $tweet = $this->tweetMapper
-                ->query("SELECT * FROM `tweets` "
-                    . "WHERE `text` LIKE ? "
-                    . "AND `screen_name` = ? "
-                    . "ORDER BY created_at DESC LIMIT 1", [ "%{$likeArgs}%", $installation->twitter_screenname ])
-                ->first();
-        }
-            
-        if (!$tweet) {
-            // Try with all words in any order
-            $likeArgs = array_map(function($item) { return "%{$item}%"; }, $arguments);
-            array_unshift($likeArgs, $installation->twitter_screenname);
-            $tweet = $this->tweetMapper
-                ->query("SELECT * FROM `tweets` "
-                    . "WHERE `screen_name` = ? "
-                    . str_repeat(" AND `text` LIKE ? ", count($likeArgs) - 1)
-                    . "ORDER BY created_at DESC LIMIT 1", $likeArgs)
-                ->first();
-        }
-            
-        if (!$tweet) {
-            // Try with any words in any order
-            $likeArgs = array_map(function($item) { return "%{$item}%"; }, $arguments);
-            array_push($likeArgs, $installation->twitter_screenname);
-            $tweet = $this->tweetMapper
-                ->query("SELECT * FROM `tweets` "
-                    . "WHERE ("
-                    . substr(str_repeat(" OR `text` LIKE ? ", count($likeArgs) - 1), 4)
-                    . ") "
-                    . "AND `screen_name` = ? "
-                    ."ORDER BY created_at DESC LIMIT 1", $likeArgs)
-                ->first();
-        }
-        
+        $this->container->logger->info("Quote search requested", [ "arguments" => implode(" ", $arguments) ]);
+        $tweet = $this->tweetMapper->search($installation->twitter_screenname, $arguments);
         $respData = new \stdClass;
         
         if (!$tweet) {
