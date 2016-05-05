@@ -104,9 +104,10 @@ class UpdateTwitterJob {
             }
         }
         
+        // Disabled for now. User feedback said this was annoying. May be configurable later.
+        /*
         try {
             if ($initialCount) {
-                // Disabled for now. User feedback said this was annoying. May be configurable later.
                 // $this->sendUpdatedNotification($twitter_screenname, $initialCount, $backfillCount);
             }
         }
@@ -114,6 +115,7 @@ class UpdateTwitterJob {
             $this->log("Error sending updated notification: " . $e);
             $this->container->logger->error("Error sending updated notification", [ "exception" => $e ]);
         }
+        */
         
         return $tweets ? $initialCount : false;
     }
