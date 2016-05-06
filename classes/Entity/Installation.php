@@ -16,10 +16,17 @@ class Installation extends \Spot\Entity {
             'api_url' => [ 'type' => 'string', 'required' => true, 'length' => 255 ],
             'access_token' => [ 'type' => 'string', 'required' => false, 'length' => 255 ],
             'access_token_expiration' => [ 'type' => 'datetime', 'required' => false ],
-            'created_on' => [ 'type' => 'datetime', 'required' => true ],
-            'updated_on' => [ 'type' => 'datetime', 'required' => true ],
+            'created_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
+            'updated_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
             'twitter_screenname' => [ 'type' => 'string', 'required' => false, 'length' => 255 ],
             'webhook_trigger' => [ 'type' => 'string', 'required' => false, 'length' => 25 ],
         ];
+    }
+
+    public static function events(\Spot\EventEmitter $eventEmitter)
+    {
+        $eventEmitter->on('beforeSave', function (\Spot\Entity $entity, \Spot\Mapper $mapper) {
+            $entity->updated_on = new \DateTime;
+        });
     }
 }

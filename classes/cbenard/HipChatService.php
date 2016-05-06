@@ -86,19 +86,18 @@ class HipChatService {
        $this->logger->info("Token response received", [ "response" => $response ]);
 
        $expSeconds = $response->body->expires_in - 60;
-       $exp = new \DateTime("now");
+       $exp = new \DateTime;
        $exp->modify("+{$expSeconds} seconds");
        
        $installation->access_token = $response->body->access_token;
        $installation->access_token_expiration = $exp;
-       $installation->updated_on = new \DateTime("now");
        $this->installationMapper->save($installation);
        
        return $response;
     }
     
     private function isExpired($expirationDateTime) {
-        return $expirationDateTime < new \DateTime("now");
+        return $expirationDateTime < new \DateTime;
     }
 
     private function ensureToken($installation) {
