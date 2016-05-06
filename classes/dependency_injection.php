@@ -48,8 +48,8 @@ $container['configureValidation'] = function () {
   $accountValidator = v::alnum('-_')->noWhitespace()->length(1, 50);
   $triggerValidator = v::regex('/^\\/\\w+$/')->length(1, 20);
   $validators = array(
-    'screen_name' => $accountValidator,
-    'webhook_trigger' => $triggerValidator
+    // 'screen_name' => $accountValidator,
+    // 'webhook_trigger' => $triggerValidator
   );
 
   return new \DavidePastore\Slim\Validation\Validation($validators);

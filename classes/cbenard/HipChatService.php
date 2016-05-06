@@ -15,19 +15,20 @@ class HipChatService {
         $this->logger = $this->container->logger;
     }
     
-    public function registerHook($installation) {
+    public function registerHook($installation, $webhook_trigger) {
         $this->ensureToken($installation);
-        $uri = "room/{$installation->room_id}/extension/webhook/twitterquote";
+        $sanitized_trigger = str_replace("/", "", $webhook_trigger);
+        $uri = "room/{$installation->room_id}/extension/webhook/twitterquote_{$sanitized_trigger}";
         
         $request = new \stdClass;
         $request->name = "Twitter Quote Trigger";
         $request->authentication = "jwt";
-        $request->key = "twitterquote";
+        $request->key = "twitterquote_{$sanitized_trigger}";
         $request->event = "room_message";
-        $request->pattern = $this->getHookPattern($installation->webhook_trigger);
+        $request->pattern = $this->getHookPattern($webhook_trigger);
         $request->url = $this->container->config['global']['baseUrl'] . "/webhook";
         
-        $this->logger->info("Registering hook", [ "request" => $request ]);
+        $this->logger->info("Registering hook", [ "roomID" => $installation->room_id, "trigger" => "twitterquote_{$sanitized_trigger}", "request" => $request ]);
         
         $response = \Httpful\Request::put($installation->api_url . $uri)
             ->addHeader("Authorization", "Bearer " . $installation->access_token)
@@ -37,6 +38,20 @@ class HipChatService {
             ->send();
             
         $this->logger->info("Register hook response received", [ "response" => $response ]);
+    }
+    
+    public function removeHook($installation, $webhook_trigger) {
+        $this->ensureToken($installation);
+        $sanitized_trigger = str_replace("/", "", $webhook_trigger);
+        $uri = "room/{$installation->room_id}/extension/webhook/twitterquote_{$sanitized_trigger}";
+        
+        $this->logger->info("Deleting hook", [ "roomID" => $installation->room_id, "trigger" => "twitterquote_{$sanitized_trigger}" ]);
+        
+        $response = \Httpful\Request::delete($installation->api_url . $uri)
+            ->addHeader("Authorization", "Bearer " . $installation->access_token)
+            ->send();
+            
+        $this->logger->info("Delete hook response received", [ "response" => $response ]);
     }
     
     public function sendRoomNotification($installation, $message) {

@@ -18,7 +18,8 @@ $baseUrl = $data['base_url'];
             "fromName": "<?=$data['integration_screenname']?>",
             "scopes": [
                 "send_notification",
-                "view_messages"
+                "view_messages",
+                "admin_room"
             ]<?php if ($data['avatarUrl']): ?>,
             "avatar": {
                 "url": "<?=$data['avatarUrl']?>"

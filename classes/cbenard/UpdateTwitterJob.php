@@ -19,7 +19,7 @@ class UpdateTwitterJob {
         $this->consoleLogger = $consoleLogger;
     }
     
-    public function update() {
+    public function update($screen_name = null) {
         $twitter_token = $this->globalSettings->getTwitterToken();
         
         if ($twitter_token) {
@@ -27,12 +27,17 @@ class UpdateTwitterJob {
             $this->twitter->setBearerToken($twitter_token);
         }
 
-        $accounts = $this->getAccounts();
-        
-        foreach ($accounts as $twitter_screenname) {
-            $newCount = $this->updateTweets($twitter_screenname);
-            if ($newCount) {
-                $this->updateAccountInformation($twitter_screenname);
+        if ($screen_name) {
+            $this->updateAccountInformation($screen_name);
+        }
+        else {
+            $accounts = $this->getAccounts();
+            
+            foreach ($accounts as $twitter_screenname) {
+                $newCount = $this->updateTweets($twitter_screenname);
+                if ($newCount) {
+                    $this->updateAccountInformation($twitter_screenname);
+                }
             }
         }
 
@@ -45,13 +50,13 @@ class UpdateTwitterJob {
     
     private function getAccounts() {
         $accounts = [];
-        $this->log("Fetching Twitter accounts from installations...");
-        $mapper = $this->db->mapper('\Entity\Installation');
-        $installations = $mapper->all()->where(['twitter_screenname !=' => null]);
-        if (!$installations || count($installations) > 0) {
+        $this->log("Fetching Twitter accounts from active installation mappings...");
+        $mapper = $this->db->mapper('\Entity\InstallationTwitterUser');
+        $joins = $mapper->all()->active();
+        if (!$joins || count($joins) > 0) {
             $accounts = array_map(function ($item) {
                 return $item['twitter_screenname'];
-            }, $installations->toArray());
+            }, $joins->toArray());
             $accounts = array_unique($accounts);
         }
         $this->log("Done (" . count($accounts). ").\r\n");
@@ -64,7 +69,7 @@ class UpdateTwitterJob {
         $this->log("Retrieved information for @{$twitter_screenname}...");
         
         $mapper = $this->db->mapper('\Entity\TwitterUser');
-        $currentRecord = $mapper->first([ 'screen_name' => $twitter_screenname ]);
+        $currentRecord = $mapper->get($twitter_screenname);
         if (!$currentRecord) {
             $currentRecord = $mapper->build([ 'screen_name' => $twitter_screenname ]);
         }

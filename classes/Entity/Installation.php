@@ -29,4 +29,12 @@ class Installation extends \Spot\Entity {
             $entity->updated_on = new \DateTime;
         });
     }
+
+    public static function relations(\Spot\MapperInterface $mapper, \Spot\EntityInterface $entity)
+    {
+        return [
+            'configurations' => $mapper->hasMany($entity, '\Entity\InstallationTwitterUser', 'installations_oauth_id')->order(['created_on' => 'ASC']),
+            'users' => $mapper->hasManyThrough($entity, '\Entity\TwitterUser', '\Entity\InstallationTwitterUser', 'screen_name', 'installations_oauth_id')->order(['created_on' => 'ASC']),
+        ];
+    }
 }

@@ -8,41 +8,76 @@
         <!-- Optional theme -->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous" />
         <style>
-            #screen_name,#webhook_trigger {
-                max-width: 250px;
+            #theform {
+                max-width: 300px;
             }
         </style>
     </head>
     <body>
-        <form method="POST">
-            <?php if (isset($errors) && count($errors)): ?>
-            <div class="alert alert-danger">
-                <ul><?php foreach ($errors as $elementName => $subErrors): ?>
-                    <?php foreach ($subErrors as $error): ?>
-                        <li><strong><?= $elementName ?>:</strong> <?= $error ?></li>
-                    <?php endforeach; ?>
-                <?php endforeach; ?></ul>
+        <?php if (isset($errors) && count($errors)): ?>
+        <div class="alert alert-danger">
+            <ul><?php if ($errors): foreach ($errors as $error): ?>
+                <li><?php if (is_string($error)) {
+                        echo $error;
+                    } else {
+                        if ($error->name) {
+                            ?><strong><?= $error->name ?>:</strong> <?php
+                        }
+                        echo $error->value;
+                    } ?></li>
+            <?php endforeach; endif; ?></ul>
+        </div>
+        <?php endif; ?>
+        <?php if (isset($success) && $success): ?>
+        <div class="alert alert-success">
+            <?= $success ?>
+        </div>
+        <?php endif; ?>
+
+        <?php if (!isset($dont_display_form)) : ?>
+        <form method="POST" id="theform">
+            <h3>Add New Account</h3>
+            <div class="form-group">
+                <label for="screen_name_new">Twitter Screen Name (without @)</label>
+                <input name="screen_name_new" id="screen_name_new" class="form-control" placeholder="BoredElonMusk" type="text" maxlength="50" value="<?= $screen_name_new ?>"? autofocus>
             </div>
+            <div class="form-group">
+                <label for="webhook_trigger_new">Web Hook Trigger (Example: /tq):</label>
+                <input name="webhook_trigger_new" id="webhook_trigger_new" class="form-control" placeholder="/elon" type="text" maxlength="25" value="<?= $webhook_trigger_new ?>"?>
+            </div>
+            <div class="form-group">
+                <input name="notify_new_tweets_new" id="notify_new_tweets_new" type="checkbox"<?= $notify_new_tweets_new ? " checked" : null ?>>
+                <label for="notify_new_tweets_new">Notify room when there are new tweets</label>
+            </div>
+            <div class="form-group">
+                <input type="submit" id="save_new" name="save_new" class="btn btn-primary" value="Add New Monitored Account" />
+            </div>
+            <?php if (isset($configurations) && count($configurations)): ?>
+            <hr />
+            <h3>Existing Accounts</h3>
+            <?php foreach ($configurations as $conf): ?>
+            <div class="form-group">
+                <label for="screen_name_<?= $conf->id ?>">Twitter Screen Name (without @)</label>
+                <input name="screen_name_<?= $conf->id ?>" id="screen_name_<?= $conf->id ?>" class="form-control" placeholder="BoredElonMusk" type="text" maxlength="50" value="<?= $conf->screen_name ?>"?>
+            </div>
+            <div class="form-group">
+                <label for="webhook_trigger_<?= $conf->id ?>">Web Hook Trigger (Example: /tq):</label>
+                <input name="webhook_trigger_<?= $conf->id ?>" id="webhook_trigger_<?= $conf->id ?>" class="form-control" placeholder="/elon" type="text" maxlength="50" value="<?= $conf->webhook_trigger ?>"?>
+            </div>
+            <div class="form-group">
+                <input name="notify_new_tweets_<?= $conf->id ?>" id="notify_new_tweets_<?= $conf->id ?>" type="checkbox"<?= $conf->notify_new_tweets ? " checked" : null ?>>
+                <label for="notify_new_tweets_<?= $conf->id ?>">Notify room when there are new tweets</label>
+            </div>
+            <div class="form-group">
+                <input type="submit" id="save_<?= $conf->id ?>" name="save_<?= $conf->id ?>" class="btn btn-primary" value="Save" />
+                <input type="submit" id="delete_<?= $conf->id ?>" name="delete_<?= $conf->id ?>" class="btn btn-danger" value="Delete" />
+            </div>
+            <?php endforeach; ?>
             <?php endif; ?>
-            <?php if (isset($success) && $success): ?>
-            <div class="alert alert-success">
-                <?= $success ?>
-            </div>
-            <?php endif; ?>
-            <div class="form-group">
-                <label for="screen_name">Twitter Screen Name (without @)</label>
-                <input name="screen_name" id="screen_name" class="form-control" placeholder="BoredElonMusk" type="text" maxlength="50" value="<?= $screen_name ?>"?>
-            </div>
-            <div class="form-group">
-                <label for="webhook_trigger">Web Hook Trigger (Example: /tq):</label>
-                <input name="webhook_trigger" id="webhook_trigger" class="form-control" placeholder="/elon" type="text" maxlength="50" value="<?= $webhook_trigger ?>"?>
-            </div>
-            <div class="form-group">
-                <input type="submit" class="btn btn-primary" value="Save" />
-            </div>
             <input type="hidden" name="<?= $csrf_nameKey ?>" value="<?= $csrf_name ?>">
             <input type="hidden" name="<?= $csrf_valueKey ?>" value="<?= $csrf_value ?>">
         </form>
+        <?php endif; ?>
 
         <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>

@@ -40,7 +40,7 @@ class WebHookController {
         ]);
         
         $oauth_id = $jwt->iss;
-        $installation = $this->installationMapper->first([ 'oauth_id' => $oauth_id ]);
+        $installation = $this->installationMapper->get($oauth_id);
         
         $this->container->logger->info("Web Hook installation fetched", [
             "installation" => $installation
