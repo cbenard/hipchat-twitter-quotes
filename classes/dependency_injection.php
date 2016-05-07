@@ -59,3 +59,5 @@ $container['configureValidation'] = function () {
 
   return new \cbenard\ConfigureValidation($newValidators, $existingValidators);
 };
+
+$container['orphan'] = function ($c) { return new \cbenard\OrphanCleanupJob($c); };

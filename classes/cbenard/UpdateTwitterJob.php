@@ -48,6 +48,10 @@ class UpdateTwitterJob {
             }
             
             $this->globalSettings->setLastUpdated();
+            
+            $this->log("Running orphan cleanup...");
+            $orphanCleanupSuccess = $this->container->orphan->cleanup();
+            $this->log(($orphanCleanupSuccess ? "Success" : "Failed") . ".\r\n");
         }
 
         if (!$twitter_token && $this->twitter->getBearerToken()) {
