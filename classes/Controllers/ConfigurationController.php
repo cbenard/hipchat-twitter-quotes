@@ -282,14 +282,15 @@ class ConfigurationController {
         $message->message = "I have been reconfigured. ";
         
         if (count($configurations)) {
-            $message->message .= "I am now monitoring the following accounts.<ul>";
+            $accountplurality = count($installation->configurations) > 2 ? "accounts" : "account";
+            $message->message .= "I am now monitoring the following {$accountplurality}:<br /><ul>";
             foreach ($configurations as $configuration) {
                 $message->message .= "<li><a href=\"https://twitter.com/{$configuration->screen_name}\">@{$configuration->screen_name}</a> "
                     . "&ndash; <strong><code>{$configuration->webhook_trigger}</code></strong></li>";
             }
             $message->message .= "</ul>";
             
-            $message->message .= "Try typing <strong><code>{$configurations[0]->webhook_trigger} help</code></strong> for more information.";
+            $message->message .= "<br />Try typing <strong><code>{$configurations[0]->webhook_trigger} help</code></strong> for more information.";
         }
         else {
             $message->message .= "I am not monitoring any accounts. Please visit the Configuration tab to set up accounts to monitor.";

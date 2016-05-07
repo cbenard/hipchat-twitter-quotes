@@ -33,4 +33,14 @@ class GlobalSettingsService {
             $this->mapper->save($settings);
         }
     }
+    
+    public function getLastUpdated() {
+        return $this->getSettings()->last_twitter_update;
+    }
+    
+    public function setLastUpdated() {
+        $settings = $this->getSettings();
+        $settings->last_twitter_update = new \DateTime;
+        $this->mapper->save($settings);
+    }
 }

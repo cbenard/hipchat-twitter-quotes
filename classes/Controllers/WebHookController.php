@@ -50,7 +50,21 @@ class WebHookController {
         ]);
         
         $message = trim(strip_tags($request->getParsedBody()['item']['message']['message']));
-        
+
+        try {        
+            $lastUpdated = $this->container->globalSettings->getLastUpdated();
+            $now = new \DateTime;
+            $now->modify("-1 hour");
+            
+            if ($lastUpdated < $now) {
+                $this->container->logger->info("Running full twitter update because it's been a long time (no cron?)", [ "last_updated" => $lastUpdated ]);
+                $this->container->updatetwitterjob->update();
+            }
+        }
+        catch (\Exception $ex) {
+            $this->container->logger->info("Error running full twitter update without cron", [ "last_updated" => $lastUpdated, "exception" => $ex ]);
+        }
+
         $respData = null;
         
         try {
@@ -106,15 +120,17 @@ class WebHookController {
         $respData = new \stdClass;
         $respData->color = "red";
 
-        $this->container->logger("Received invalid webhook from HipChat server side", [ "trigger" => $trigger ]);
+        $this->container->logger->error("Received invalid webhook from HipChat server side", [ "trigger" => $trigger ]);
 
         try {
             $this->container->hipchat->removeHook($installation, $trigger);
             $respData->message = "I received a web hook ({$trigger}) that was no longer in the database. I removed it from HipChat's room configuration.";
+            $respData->from = "Orphan Web Hook";
         }
         catch (\Exception $ex) {
-            $this->container->logger("Failed removing invalid webhook from HipChat server side", [ "trigger" => $trigger, "exception" => $ex ]);
+            $this->container->logger->error("Failed removing invalid webhook from HipChat server side", [ "trigger" => $trigger, "exception" => $ex ]);
             $respData->message = "I received a web hook ({$trigger}) that was no longer in the database. I attempted to remove it from HipChat's room configuration, but there was an error.";
+            $respData->from = "Orphan Web Hook";
         }
         
         return $respData;
@@ -131,6 +147,7 @@ class WebHookController {
         }
         else {
             $respData = $this->hipchat->createMessageForTweet($tweet);
+            $respData->from = "Random Quote";
         }
         
         return $respData;
@@ -147,6 +164,7 @@ class WebHookController {
         }
         else {
             $respData = $this->hipchat->createMessageForTweet($tweet);
+            $respData->from = "Latest Quote";
         }
         
         return $respData;
@@ -158,11 +176,13 @@ class WebHookController {
         $respData = new \stdClass;
         
         if (!$tweet) {
+            $respData->from = "No match";
             $respData->message = "I couldn't find a tweet with that search text.";
             $respData->color = "red";
         }
         else {
             $respData = $this->hipchat->createMessageForTweet($tweet);
+            $respData->from = "Quote Match";
         }
         
         return $respData;
@@ -178,8 +198,24 @@ class WebHookController {
             . "<li><strong><code>{$matchingRecord->webhook_trigger} help</code></strong> &ndash; This help message</li>"
             . "<li><strong><code>{$matchingRecord->webhook_trigger} latest</code></strong> &ndash; The latest tweet from the monitored account</li>"
             . "<li><strong><code>{$matchingRecord->webhook_trigger} search text</code></strong> &ndash; Most recent matching quote for search text</li>"
-            . "</ul>"
-            . "<br />"
+            . "</ul>";
+            
+        if (count($installation->configurations) > 1) {
+            $accountplurality = count($installation->configurations) > 2 ? "accounts" : "account";
+            $respData->message .= "<br />I also monitor the following {$accountplurality}:<ul>";
+            foreach ($installation->configurations as $configuration) {
+                if ($configuration->id == $matchingRecord->id) {
+                    continue;
+                }
+                else {
+                    $respData->message .= "<li><a href=\"https://twitter.com/{$configuration->screen_name}\">@{$configuration->screen_name}</a> "
+                        . "&ndash; <strong><code>{$configuration->webhook_trigger}</code></strong></li>";
+                }
+            }
+            $respData->message .= "</ul>";
+        }
+            
+        $respData->message .= "<br />"
             . "<em>Twitter Quotes for HipChat is an <a href=\"https://github.com/cbenard/hipchat-twitter-quotes\">open source project</a> by <a href=\"https://chrisbenard.net\">Chris Benard</a></em>.";
             
         return $respData;

@@ -46,6 +46,8 @@ class UpdateTwitterJob {
                     $this->container->logger->error("Unable to run twitter update job", [ "screen_name" => $twitter_screenname, "exception" => $ex ]);
                 }
             }
+            
+            $this->globalSettings->setLastUpdated();
         }
 
         if (!$twitter_token && $this->twitter->getBearerToken()) {
