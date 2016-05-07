@@ -237,15 +237,32 @@ class ConfigurationController {
     }
     
     private function sendReconfigureMessage($installation) {
+        $mapper = $this->container->db->mapper('\Entity\InstallationTwitterUser');
+        $configurations = $mapper
+            ->where([ "installations_oauth_id" => $installation->oauth_id ])
+            ->active()
+            ->order([ 'created_on' => 'ASC' ]);
+        
         $message = new \stdClass;
         $message->from = "Reconfiguration";
         $message->message_format = "html";
         $message->color = "yellow";
-        $message->message = "I have been reconfigured. I am now monitoring "
-            . "<a href=\"https://twitter.com/{$installation->twitter_screenname}\">@{$installation->twitter_screenname}</a> "
-            . "and listening for the trigger <strong><code>{$installation->webhook_trigger}</code></strong>.<br /><br />"
-            . "Try typing <strong><code>{$installation->webhook_trigger} help</code></strong> for more information.";
+        $message->message = "I have been reconfigured. ";
         
+        if (count($configurations)) {
+            $message->message .= "I am now monitoring the following accounts.<ul>";
+            foreach ($configurations as $configuration) {
+                $message->message .= "<li><a href=\"https://twitter.com/{$configuration->screen_name}\">@{$configuration->screen_name}</a> "
+                    . "&ndash; <strong><code>{$configuration->webhook_trigger}</code></strong></li>";
+            }
+            $message->message .= "</ul>";
+            
+            $message->message .= "Try typing <strong><code>{$configurations[0]->webhook_trigger} help</code></strong> for more information.";
+        }
+        else {
+            $message->message .= "I am not monitoring any accounts. Please visit the Configuration tab to set up accounts to monitor.";
+        }
+
         $this->hipchat->sendRoomNotification($installation, $message);
     }
 }
