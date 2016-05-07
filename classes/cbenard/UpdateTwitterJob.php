@@ -19,7 +19,7 @@ class UpdateTwitterJob {
         $this->consoleLogger = $consoleLogger;
     }
     
-    public function update($screen_name = null) {
+    public function update($screen_name = null, $backfill = true) {
         $twitter_token = $this->globalSettings->getTwitterToken();
         
         if ($twitter_token) {
@@ -29,12 +29,13 @@ class UpdateTwitterJob {
 
         if ($screen_name) {
             $this->updateAccountInformation($screen_name);
+            $this->updateTweets($screen_name, $backfill);
         }
         else {
             $accounts = $this->getAccounts();
             
             foreach ($accounts as $twitter_screenname) {
-                $newCount = $this->updateTweets($twitter_screenname);
+                $newCount = $this->updateTweets($twitter_screenname, $backfill);
                 if ($newCount) {
                     $this->updateAccountInformation($twitter_screenname);
                 }
@@ -55,7 +56,7 @@ class UpdateTwitterJob {
         $joins = $mapper->all()->active();
         if (!$joins || count($joins) > 0) {
             $accounts = array_map(function ($item) {
-                return $item['twitter_screenname'];
+                return $item['screen_name'];
             }, $joins->toArray());
             $accounts = array_unique($accounts);
         }
@@ -74,7 +75,7 @@ class UpdateTwitterJob {
             $currentRecord = $mapper->build([ 'screen_name' => $twitter_screenname ]);
         }
         
-        $currentRecord->id = $currentInfo->id;
+        $currentRecord->user_id = $currentInfo->id;
         $currentRecord->profile_image_url_https = $currentInfo->profile_image_url_https;
         $currentRecord->name = $currentInfo->name;
         
@@ -82,7 +83,7 @@ class UpdateTwitterJob {
         $this->log("Saved.\r\n");
     }
     
-    private function updateTweets($twitter_screenname) {
+    private function updateTweets($twitter_screenname, $backfill = true) {
         $mapper = $this->db->mapper('\Entity\Tweet');
         $max_tweet = $mapper->latest($twitter_screenname);
         $max_tweet_id = $max_tweet ? $max_tweet->tweet_id : null;
@@ -99,7 +100,7 @@ class UpdateTwitterJob {
         if ($max_tweet) {
             $min_tweet = $mapper->earliest($twitter_screenname);
             
-            if ($min_tweet) {
+            if ($min_tweet && $backfill) {
                 $backfillTweets = $this->twitter->getTweetsBefore($twitter_screenname, $min_tweet->tweet_id);
                 $this->log("Retrieving backfill tweets for @{$twitter_screenname}...");
 

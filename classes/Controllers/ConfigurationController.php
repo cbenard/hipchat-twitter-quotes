@@ -141,7 +141,11 @@ class ConfigurationController {
             if ($returnParameters['saved_screen_name']) {
                 try {
                     // Refresh tweets now
-                    $this->container->updatetwitterjob->update($returnParameters['saved_screen_name']);
+                    $this->container->updatetwitterjob->update($returnParameters['saved_screen_name'], $backfill = false);
+                    // For testing, but normally we don't want this much logging
+                    // $container = $this->container;
+                    // $u = new \cbenard\UpdateTwitterJob($this->container, function($msg) use ($container) { $container->logger->info($msg); });
+                    // $u->update($returnParameters['saved_screen_name']);
                 }
                 catch (\Exception $e) {
                     $this->container->logger->error("Error fetching new tweets after reconfiguration", [ "exception" => $e ]);
@@ -189,7 +193,7 @@ class ConfigurationController {
         
         $screen_name = strtolower(trim($body['screen_name_' . $saveID]));
         $webhook_trigger = strtolower(trim($body['webhook_trigger_' . $saveID]));
-        $notify_new_tweets = $body['notify_new_tweets_' . $saveID] == "on" ? true : false;
+        $notify_new_tweets = isset($body['notify_new_tweets_' . $saveID]) && $body['notify_new_tweets_' . $saveID] == "on" ? true : false;
 
         try {
             $mapper->updateExisting($saveID, $installation->oauth_id, $screen_name, $webhook_trigger, $notify_new_tweets);

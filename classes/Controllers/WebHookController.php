@@ -10,6 +10,7 @@ class WebHookController {
     private $container;
     private $jwt;
     private $installationMapper;
+    private $joinMapper;
     private $tweetMapper;
     private $userMapper;
     private $db;
@@ -18,6 +19,7 @@ class WebHookController {
         $this->container = $container;
         $this->jwt = $container->jwt;
         $this->installationMapper = $container->db->mapper('\Entity\Installation');
+        $this->joinMapper = $container->db->mapper('\Entity\InstallationTwitterUser');
         $this->userMapper = $container->db->mapper('\Entity\TwitterUser');
         $this->tweetMapper = $container->db->mapper('\Entity\Tweet');
         $this->db = $container->db;
@@ -69,25 +71,57 @@ class WebHookController {
     
     private function processTrigger($installation, $message) {
         $words = explode(" ", $message);
-
-        if (count($words) == 1) {
-            return $this->randomQuote($installation);
+        $trigger = str_replace(".", "", strtolower($words[0]));
+        
+        $matchingRecord = $this->joinMapper
+            ->where([
+                "installations_oauth_id" => $installation->oauth_id,
+                "webhook_trigger" => $trigger,
+                "is_active" => true
+            ])
+            ->active()
+            ->first();
+            
+        if ($matchingRecord === false) {
+            // We have an old hook registered somehow
+            return $this->removeOldHook($installation, $trigger);
+        }
+        elseif (count($words) == 1) {
+            return $this->randomQuote($installation, $matchingRecord);
         }
         elseif (count($words) == 2 && strtolower($words[1]) == "help") {
-            return $this->usage($installation);
+            return $this->usage($installation, $matchingRecord);
         }
         elseif (count($words) == 2 && strtolower($words[1]) == "latest") {
-            return $this->latest($installation);
+            return $this->latest($installation, $matchingRecord);
         }
         else {
             $arguments = array_slice($words, 1);
-            return $this->quoteSearch($installation, $arguments);
+            return $this->quoteSearch($installation, $matchingRecord, $arguments);
         }
     }
     
-    private function randomQuote($installation) {
+    private function removeOldHook($installation, $trigger) {
+        $respData = new \stdClass;
+        $respData->color = "red";
+
+        $this->container->logger("Received invalid webhook from HipChat server side", [ "trigger" => $trigger ]);
+
+        try {
+            $this->container->hipchat->removeHook($installation, $trigger);
+            $respData->message = "I received a web hook ({$trigger}) that was no longer in the database. I removed it from HipChat's room configuration.";
+        }
+        catch (\Exception $ex) {
+            $this->container->logger("Failed removing invalid webhook from HipChat server side", [ "trigger" => $trigger, "exception" => $ex ]);
+            $respData->message = "I received a web hook ({$trigger}) that was no longer in the database. I attempted to remove it from HipChat's room configuration, but there was an error.";
+        }
+        
+        return $respData;
+    }
+    
+    private function randomQuote($installation, $matchingRecord) {
         $this->container->logger->info("Random quote requested");
-        $tweet = $this->tweetMapper->random($installation->twitter_screenname);
+        $tweet = $this->tweetMapper->random($matchingRecord->screen_name);
         $respData = new \stdClass;
         
         if (!$tweet) {
@@ -101,9 +135,9 @@ class WebHookController {
         return $respData;
     }
     
-    private function latest($installation) {
+    private function latest($installation, $matchingRecord) {
         $this->container->logger->info("Latest quote requested");
-        $tweet = $this->tweetMapper->latest($installation->twitter_screenname);
+        $tweet = $this->tweetMapper->latest($matchingRecord->screen_name);
         $respData = new \stdClass;
         
         if (!$tweet) {
@@ -117,9 +151,9 @@ class WebHookController {
         return $respData;
     }
     
-    private function quoteSearch($installation, $arguments) {
+    private function quoteSearch($installation, $matchingRecord, $arguments) {
         $this->container->logger->info("Quote search requested", [ "arguments" => implode(" ", $arguments) ]);
-        $tweet = $this->tweetMapper->search($installation->twitter_screenname, $arguments);
+        $tweet = $this->tweetMapper->search($matchingRecord->screen_name, $arguments);
         $respData = new \stdClass;
         
         if (!$tweet) {
@@ -133,16 +167,16 @@ class WebHookController {
         return $respData;
     }
     
-    private function usage($installation) {
+    private function usage($installation, $matchingRecord) {
         $respData = new \stdClass;
         $respData->from = "Help";
         $respData->message_format = "html";
         $respData->color = "yellow";
         $respData->message = "<strong>Twitter Quotes Help</strong><br/><ul>"
-            . "<li><strong><code>{$installation->webhook_trigger}</code></strong> &ndash; Random quote</li>"
-            . "<li><strong><code>{$installation->webhook_trigger} help</code></strong> &ndash; This help message</li>"
-            . "<li><strong><code>{$installation->webhook_trigger} latest</code></strong> &ndash; The latest tweet from the monitored account</li>"
-            . "<li><strong><code>{$installation->webhook_trigger} search text</code></strong> &ndash; Most recent matching quote for search text</li>"
+            . "<li><strong><code>{$matchingRecord->webhook_trigger}</code></strong> &ndash; Random quote</li>"
+            . "<li><strong><code>{$matchingRecord->webhook_trigger} help</code></strong> &ndash; This help message</li>"
+            . "<li><strong><code>{$matchingRecord->webhook_trigger} latest</code></strong> &ndash; The latest tweet from the monitored account</li>"
+            . "<li><strong><code>{$matchingRecord->webhook_trigger} search text</code></strong> &ndash; Most recent matching quote for search text</li>"
             . "</ul>"
             . "<br />"
             . "<em>Twitter Quotes for HipChat is an <a href=\"https://github.com/cbenard/hipchat-twitter-quotes\">open source project</a> by <a href=\"https://chrisbenard.net\">Chris Benard</a></em>.";
@@ -151,7 +185,7 @@ class WebHookController {
     }
     
     private function createMessageForTweet($tweet) {
-        $user = $this->userMapper->first([ 'id' => $tweet->user_id ]);
+        // $user = $this->userMapper->first([ 'id' => $tweet->user_id ]);
 
         // Convert new lines to <br/>
         $htmlText = str_replace("\r\n", "\n", $tweet->text);
@@ -159,7 +193,7 @@ class WebHookController {
         $htmlText = str_replace("\n", "<br />", $htmlText);
         
         $respData = new \stdClass;
-        $respData->message = "<strong><a href=\"https://twitter.com/statuses/{$tweet->tweet_id}\">@{$user->screen_name}</a></strong>: {$htmlText}";
+        $respData->message = "<strong><a href=\"https://twitter.com/statuses/{$tweet->tweet_id}\">@{$tweet->user->screen_name}</a></strong>: {$htmlText}";
         $respData->message_format = "html";
         
         $respData->card = new \stdClass;
@@ -169,13 +203,13 @@ class WebHookController {
         $respData->card->description->format = "text";
         $respData->card->format = "medium";
         $respData->card->url = "https://twitter.com/statuses/{$tweet->tweet_id}";
-        $respData->card->title = "{$user->name}";
-        if ($user->screen_name != $user->name) {
-            $respData->card->title .= " (@{$user->screen_name})";
+        $respData->card->title = "{$tweet->user->name}";
+        if ($tweet->user->screen_name != $tweet->user->name) {
+            $respData->card->title .= " (@{$tweet->user->screen_name})";
         }
         $respData->card->id = Uuid::uuid4()->toString();
         $respData->card->icon = new \stdClass;
-        $respData->card->icon->url = $user->profile_image_url_https;
+        $respData->card->icon->url = $tweet->user->profile_image_url_https;
 
         $this->container->logger->info("Created message for tweet", [ "card" => $respData->card ]);
         
