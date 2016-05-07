@@ -35,9 +35,15 @@ class UpdateTwitterJob {
             $accounts = $this->getAccounts();
             
             foreach ($accounts as $twitter_screenname) {
-                $newCount = $this->updateTweets($twitter_screenname, $backfill);
-                if ($newCount) {
-                    $this->updateAccountInformation($twitter_screenname);
+                try {
+                    $newCount = $this->updateTweets($twitter_screenname, $backfill);
+                    if ($newCount) {
+                        $this->updateAccountInformation($twitter_screenname);
+                    }
+                }
+                catch (\Exception $ex) {
+                    $this->log("Unable to fetch information for: ". $twitter_screenname);
+                    $this->container->logger->error("Unable to run twitter update job", [ "screen_name" => $twitter_screenname, "exception" => $ex ]);
                 }
             }
         }
@@ -110,40 +116,61 @@ class UpdateTwitterJob {
             }
         }
         
-        // Disabled for now. User feedback said this was annoying. May be configurable later.
-        /*
-        try {
-            if ($initialCount) {
-                // $this->sendUpdatedNotification($twitter_screenname, $initialCount, $backfillCount);
-            }
+        if ($initialCount) {
+            $this->sendUpdatedNotification($twitter_screenname, $initialCount, $backfillCount);
         }
-        catch (\Exception $e) {
-            $this->log("Error sending updated notification: " . $e);
-            $this->container->logger->error("Error sending updated notification", [ "exception" => $e ]);
-        }
-        */
         
         return $tweets ? $initialCount : false;
     }
     
     private function sendUpdatedNotification($twitter_screenname, $count, $backfillCount) {
-        $mapper = $this->db->mapper('\Entity\Installation');
-        $installations = $mapper->all([ 'twitter_screenname' => $twitter_screenname ]);
+        $maxNumber = 3;
+        $mapper = $this->db->mapper('\Entity\InstallationTwitterUser');
+        $configurations = $mapper->where([
+            'screen_name' => $twitter_screenname,
+            'is_active' => true,
+            'notify_new_tweets' => true,
+        ]);
         
-        if ($installations) {
-            foreach ($installations as $installation) {
-                $message = new \stdClass;
-                $message->from = "New Tweet" . ($count != 1 ? "s" : "");
-                $message->message_format = "html";
-                $message->color = "yellow";
-                $tweetplurality = $count != 1 ? "new tweets have" : "a new tweet has";
-                $itistheyare = $count != 1 ? "They are" : "It is";
-                $message->message = "I have noticed that {$tweetplurality} been added by "
-                    . "<a href=\"https://twitter.com/{$installation->twitter_screenname}\">@{$installation->twitter_screenname}</a>. "
-                    . "{$itistheyare} now available for use with this integration.<br /><br />"
-                    . "Try typing <strong><code>{$installation->webhook_trigger} latest</code></strong> to see the latest tweet.";
-                
-                $this->hipchat->sendRoomNotification($installation, $message);
+        if ($configurations) {
+            foreach ($configurations as $configuration) {
+                $tweetMapper = $this->db->mapper('\Entity\Tweet');
+                $tweets = $tweetMapper
+                    ->where([ 'screen_name' => $configuration->screen_name ])
+                    ->order([ 'created_at' => 'DESC' ])
+                    ->limit(min([ $maxNumber, $count ]));
+                    
+                try {
+                    // Chronological order up to 3
+                    $reverseTweets = [];
+                    foreach ($tweets as $tweet) {
+                        array_unshift($reverseTweets, $tweet);
+                    }
+                    
+                    foreach ($reverseTweets as $tweet) {
+                        $tweet = (object)$tweet;
+                        $message = $this->hipchat->createMessageForTweet($tweet);
+                        $message->from = "New Tweet";
+                        $this->hipchat->sendRoomNotification($configuration->installation, $message);
+                    }
+
+                    if ($count > $maxNumber) {
+                        $remainder = $count - $maxNumber;
+                        
+                        $message = new \stdClass;
+                        $message->from = "New Tweet" . ($count != 1 ? "s" : "");
+                        $message->message_format = "html";
+                        $message->color = "yellow";
+                        $tweetplurality = $remainder > 1 ? "tweets were" : "tweet was";
+                        $message->message = "{$remainder} more {$tweetplurality} imported from <a href=\"https://twitter.com/{$configuration->screen_name}\">@{$configuration->screen_name}</a> but not displayed.";
+                        
+                        $this->hipchat->sendRoomNotification($configuration->installation, $message);
+                    }
+                }
+                catch (\Exception $e) {
+                    $this->log("Error sending updated notification: " . $e);
+                    $this->container->logger->error("Error sending updated notification", [ "exception" => $e ]);
+                }
             }
         }
     }

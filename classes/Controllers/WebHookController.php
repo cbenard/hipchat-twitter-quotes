@@ -4,7 +4,6 @@ namespace Controllers;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use \Ramsey\Uuid\Uuid;
 
 class WebHookController {
     private $container;
@@ -14,6 +13,7 @@ class WebHookController {
     private $tweetMapper;
     private $userMapper;
     private $db;
+    private $hipchat;
     
     public function __construct($container) {
         $this->container = $container;
@@ -23,6 +23,7 @@ class WebHookController {
         $this->userMapper = $container->db->mapper('\Entity\TwitterUser');
         $this->tweetMapper = $container->db->mapper('\Entity\Tweet');
         $this->db = $container->db;
+        $this->hipchat = $container->hipchat;
     }
     
     public function trigger(Request $request, Response $response, $args) {
@@ -71,7 +72,7 @@ class WebHookController {
     
     private function processTrigger($installation, $message) {
         $words = explode(" ", $message);
-        $trigger = str_replace(".", "", strtolower($words[0]));
+        $trigger = str_replace(".", "/", strtolower($words[0]));
         
         $matchingRecord = $this->joinMapper
             ->where([
@@ -129,7 +130,7 @@ class WebHookController {
             $respData->color = "red";
         }
         else {
-            $respData = $this->createMessageForTweet($tweet);
+            $respData = $this->hipchat->createMessageForTweet($tweet);
         }
         
         return $respData;
@@ -145,7 +146,7 @@ class WebHookController {
             $respData->color = "red";
         }
         else {
-            $respData = $this->createMessageForTweet($tweet);
+            $respData = $this->hipchat->createMessageForTweet($tweet);
         }
         
         return $respData;
@@ -161,7 +162,7 @@ class WebHookController {
             $respData->color = "red";
         }
         else {
-            $respData = $this->createMessageForTweet($tweet);
+            $respData = $this->hipchat->createMessageForTweet($tweet);
         }
         
         return $respData;
@@ -181,38 +182,6 @@ class WebHookController {
             . "<br />"
             . "<em>Twitter Quotes for HipChat is an <a href=\"https://github.com/cbenard/hipchat-twitter-quotes\">open source project</a> by <a href=\"https://chrisbenard.net\">Chris Benard</a></em>.";
             
-        return $respData;
-    }
-    
-    private function createMessageForTweet($tweet) {
-        // $user = $this->userMapper->first([ 'id' => $tweet->user_id ]);
-
-        // Convert new lines to <br/>
-        $htmlText = str_replace("\r\n", "\n", $tweet->text);
-        $htmlText = str_replace("\r", "\n", $htmlText);
-        $htmlText = str_replace("\n", "<br />", $htmlText);
-        
-        $respData = new \stdClass;
-        $respData->message = "<strong><a href=\"https://twitter.com/statuses/{$tweet->tweet_id}\">@{$tweet->user->screen_name}</a></strong>: {$htmlText}";
-        $respData->message_format = "html";
-        
-        $respData->card = new \stdClass;
-        $respData->card->style = "link";
-        $respData->card->description = new \stdClass;
-        $respData->card->description->value = $tweet->text;
-        $respData->card->description->format = "text";
-        $respData->card->format = "medium";
-        $respData->card->url = "https://twitter.com/statuses/{$tweet->tweet_id}";
-        $respData->card->title = "{$tweet->user->name}";
-        if ($tweet->user->screen_name != $tweet->user->name) {
-            $respData->card->title .= " (@{$tweet->user->screen_name})";
-        }
-        $respData->card->id = Uuid::uuid4()->toString();
-        $respData->card->icon = new \stdClass;
-        $respData->card->icon->url = $tweet->user->profile_image_url_https;
-
-        $this->container->logger->info("Created message for tweet", [ "card" => $respData->card ]);
-        
         return $respData;
     }
 }

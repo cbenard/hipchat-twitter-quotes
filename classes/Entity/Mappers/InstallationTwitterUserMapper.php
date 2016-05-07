@@ -89,7 +89,10 @@ class InstallationTwitterUserMapper extends Mapper {
             },
             'inactive' => function ($query) {
                 return $query->where([ "is_active" => false ]);
-            }
+            },
+            'wantsNotifications' => function ($query) {
+                return $query->where([ "notify_new_tweets" => true ]);
+            },
         ];
     }
 }

@@ -47,10 +47,15 @@ $container['configureValidation'] = function () {
   //Create the validators
   $accountValidator = v::alnum('-_')->noWhitespace()->length(1, 50);
   $triggerValidator = v::regex('/^\\/\\w+$/')->length(1, 20);
-  $validators = array(
-    // 'screen_name' => $accountValidator,
-    // 'webhook_trigger' => $triggerValidator
+  $newValidators = array(
+    'screen_name_new' => $accountValidator,
+    'webhook_trigger_new' => $triggerValidator
   );
 
-  return new \DavidePastore\Slim\Validation\Validation($validators);
+  $existingValidators = array(
+    'screen_name_' => $accountValidator,
+    'webhook_trigger_' => $triggerValidator
+  );
+
+  return new \cbenard\ConfigureValidation($newValidators, $existingValidators);
 };

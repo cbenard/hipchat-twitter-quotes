@@ -86,6 +86,36 @@ class HipChatService {
         return $hookRegex;
     }
     
+    public function createMessageForTweet($tweet) {
+        // Convert new lines to <br/>
+        $htmlText = str_replace("\r\n", "\n", $tweet->text);
+        $htmlText = str_replace("\r", "\n", $htmlText);
+        $htmlText = str_replace("\n", "<br />", $htmlText);
+        
+        $respData = new \stdClass;
+        $respData->message = "<strong><a href=\"https://twitter.com/statuses/{$tweet->tweet_id}\">@{$tweet->user->screen_name}</a></strong>: {$htmlText}";
+        $respData->message_format = "html";
+        
+        $respData->card = new \stdClass;
+        $respData->card->style = "link";
+        $respData->card->description = new \stdClass;
+        $respData->card->description->value = $tweet->text;
+        $respData->card->description->format = "text";
+        $respData->card->format = "medium";
+        $respData->card->url = "https://twitter.com/statuses/{$tweet->tweet_id}";
+        $respData->card->title = "{$tweet->user->name}";
+        if ($tweet->user->screen_name != $tweet->user->name) {
+            $respData->card->title .= " (@{$tweet->user->screen_name})";
+        }
+        $respData->card->id = \Ramsey\Uuid\Uuid::uuid4()->toString();
+        $respData->card->icon = new \stdClass;
+        $respData->card->icon->url = $tweet->user->profile_image_url_https;
+
+        $this->container->logger->info("Created message for tweet", [ "card" => $respData->card ]);
+        
+        return $respData;
+    }
+    
     private function refreshAccessToken($installation) {
         $uri = $installation->token_url;
         $request = new \stdClass;

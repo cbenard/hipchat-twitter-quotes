@@ -29,6 +29,10 @@ class TwitterService {
         $response = $this->client->api_request('users/show.json', $params);
         
         $item = json_decode($response);
+        
+        if (!isset($item->screen_name)) {
+            throw new \Exception("Unable to find screen name: " . $screen_name);
+        }
         $result = (object)array(
             'created_at' => new \DateTime($item->created_at),
             'id' => $item->id_str,

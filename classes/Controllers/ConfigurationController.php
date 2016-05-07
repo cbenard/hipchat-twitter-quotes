@@ -10,12 +10,14 @@ class ConfigurationController {
     private $hipchat;
     private $csrf;
     private $configureValidation;
+    private $twitter;
     
     public function __construct($container) {
         $this->container = $container;
         $this->hipchat = $container->hipchat;
         $this->csrf = $container->csrf;
         $this->configureValidation = $container->configureValidation;
+        $this->twitter = $container->twitter;
     }
     
     public function display(Request $request, Response $response, $args) {
@@ -69,7 +71,7 @@ class ConfigurationController {
             $jwt = $this->container->jwt->validateRequest($request);
         }
         catch (\Firebase\JWT\ExpiredException $ex) {
-            $this->container->logger->info("Expired JWT token on configuration", [ "exception" => $ex, "request" => $request ]);
+            $this->container->logger->error("Expired JWT token on configuration", [ "exception" => $ex, "request" => $request ]);
             $returnParameters = [
                 "errors" => [ "Authentication information expired. Please refresh." ],
                 "dont_display_form" => true
@@ -168,7 +170,20 @@ class ConfigurationController {
         $screen_name = strtolower(trim($body['screen_name_new']));
         $webhook_trigger = strtolower(trim($body['webhook_trigger_new']));
         $notify_new_tweets = isset($body['notify_new_tweets_new']) && $body['notify_new_tweets_new'] == "on" ? true : false;
+        
+        try {
+            $user = $this->twitter->getUserInfo($screen_name);
+        }
+        catch (\Exception $ex) {
+            $this->container->logger->error("Unable to verify twitter account", [ "screen_name" => $screen_name, "request" => $request ]);
+            $returnParameters["errors"] = [ "Unable to verify Twitter account @{$screen_name}." ];
 
+            $returnParameters["screen_name_new"] = $body['screen_name_new'];
+            $returnParameters["webhook_trigger_new"] = $body['webhook_trigger_new'];
+            $returnParameters["notify_new_tweets_new"] = isset($body['notify_new_tweets_new']) ? $body['notify_new_tweets_new'] : null;
+            return $returnParameters;
+        }
+        
         try {
             $mapper->addNew($installation->oauth_id, $screen_name, $webhook_trigger, $notify_new_tweets);
             $this->hipchat->registerHook($installation, $webhook_trigger);
@@ -194,6 +209,19 @@ class ConfigurationController {
         $screen_name = strtolower(trim($body['screen_name_' . $saveID]));
         $webhook_trigger = strtolower(trim($body['webhook_trigger_' . $saveID]));
         $notify_new_tweets = isset($body['notify_new_tweets_' . $saveID]) && $body['notify_new_tweets_' . $saveID] == "on" ? true : false;
+        
+        if ($old->screen_name != $screen_name) {
+            try {
+                $user = $this->twitter->getUserInfo($screen_name);
+            }
+            catch (\Exception $ex) {
+                $this->container->logger->error("Unable to verify twitter account", [ "screen_name" => $screen_name, "request" => $request ]);
+                $returnParameters["errors"] = [ "Unable to verify Twitter account @{$screen_name}." ];
+                $returnParameters["webhook_trigger_new"] = $body['webhook_trigger_new'];
+                $returnParameters["notify_new_tweets_new"] = isset($body['notify_new_tweets_new']) ? $body['notify_new_tweets_new'] : null;
+                return $returnParameters;
+            }
+        }
 
         try {
             $mapper->updateExisting($saveID, $installation->oauth_id, $screen_name, $webhook_trigger, $notify_new_tweets);
