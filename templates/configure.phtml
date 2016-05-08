@@ -8,8 +8,27 @@
         <!-- Optional theme -->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous" />
         <style>
-            #theform {
-                max-width: 300px;
+            .twitter-user-avatar {
+                width: 50px;
+                height: 50px;
+                float: left;
+                margin-right: 10px;
+            }
+            .twitter-user-label {
+                font-weight: bold;
+                font-size: 1.5em;
+            }
+            .twitter-user-sublabel {
+                display: block;
+            }
+            .avatar-container {
+                margin-bottom: 10px;
+            }
+            .existing-group {
+                margin-bottom: 30px;
+            }
+            .groupcontainer {
+                width: 300px;
             }
         </style>
     </head>
@@ -36,8 +55,8 @@
 
         <?php if (!isset($dont_display_form)) : ?>
         <form method="POST" id="theform">
-            <h3>Add New Account</h3>
             <div class="groupcontainer">
+                <h3>Add New Account</h3>
                 <div class="form-group">
                     <label for="screen_name_new">Twitter Screen Name (without @)</label>
                     <input name="screen_name_new" id="screen_name_new" class="form-control" placeholder="BoredElonMusk" type="text" maxlength="50" value="<?= $screen_name_new ?>"? autofocus>
@@ -58,10 +77,16 @@
             <hr />
             <h3>Existing Accounts</h3>
             <?php foreach ($configurations as $conf): ?>
-            <div class="groupcontainer">
-                <div class="form-group">
-                    <label for="screen_name_<?= $conf->id ?>">Twitter Screen Name (without @)</label>
-                    <input name="screen_name_<?= $conf->id ?>" id="screen_name_<?= $conf->id ?>" class="form-control" placeholder="BoredElonMusk" type="text" maxlength="50" value="<?= $conf->screen_name ?>"?>
+            <div class="groupcontainer existing-group">
+                <div class="avatar-container">
+                    <img class="twitter-user-avatar" src="<?= $conf->user->profile_image_url_https ?>" />
+                    <?php if ($conf->user->screen_name != $conf->user->name): ?>
+                    <span class="twitter-user-label"><?= $conf->user->name ?></span>
+                    <span class="twitter-user-sublabel">@<?= $conf->screen_name ?></span>
+                    <?php else: ?>
+                    <span class="twitter-user-label">@<?= $conf->screen_name ?></span>
+                    <?php endif; ?>
+                    <div style="clear:both"></div>
                 </div>
                 <div class="form-group">
                     <label for="webhook_trigger_<?= $conf->id ?>">Web Hook Trigger (Example: /tq):</label>
@@ -96,7 +121,7 @@
                     $(this).closest(".groupcontainer").find("input[name^='save_']").click();
                 }
             });
-            window.parent.parent.scrollTo(0,0);
+            window.parent.parent.scrollTo(0, 0);
         });
         </script>
     </body>

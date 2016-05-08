@@ -206,31 +206,17 @@ class ConfigurationController {
         $mapper = $this->container->db->mapper('\Entity\InstallationTwitterUser');
         $old = $mapper->get($saveID);
         
-        $screen_name = strtolower(trim($body['screen_name_' . $saveID]));
         $webhook_trigger = strtolower(trim($body['webhook_trigger_' . $saveID]));
         $notify_new_tweets = isset($body['notify_new_tweets_' . $saveID]) && $body['notify_new_tweets_' . $saveID] == "on" ? true : false;
-        
-        if ($old->screen_name != $screen_name) {
-            try {
-                $user = $this->twitter->getUserInfo($screen_name);
-            }
-            catch (\Exception $ex) {
-                $this->container->logger->error("Unable to verify twitter account", [ "screen_name" => $screen_name, "request" => $request ]);
-                $returnParameters["errors"] = [ "Unable to verify Twitter account @{$screen_name}." ];
-                $returnParameters["webhook_trigger_new"] = $body['webhook_trigger_new'];
-                $returnParameters["notify_new_tweets_new"] = isset($body['notify_new_tweets_new']) ? $body['notify_new_tweets_new'] : null;
-                return $returnParameters;
-            }
-        }
 
         try {
-            $mapper->updateExisting($saveID, $installation->oauth_id, $screen_name, $webhook_trigger, $notify_new_tweets);
+            $mapper->updateExisting($saveID, $installation->oauth_id, $webhook_trigger, $notify_new_tweets);
             if ($old->webhook_trigger != $webhook_trigger) {
                 $this->hipchat->removeHook($installation, $old->webhook_trigger);
             }
             $this->hipchat->registerHook($installation, $webhook_trigger);
-            $returnParameters["success"] = "Updated @{$screen_name} with {$webhook_trigger}";
-            $returnParameters["saved_screen_name"] = $screen_name;
+            $returnParameters["success"] = "Updated @{$old->screen_name} with {$webhook_trigger}";
+            $returnParameters["saved_screen_name"] = $old->screen_name;
         }
         catch (\Exception $ex) {
             $this->container->logger->error("Error saving existing configuration", [ "exception" => $ex ]);

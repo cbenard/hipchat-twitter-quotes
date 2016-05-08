@@ -46,14 +46,13 @@ $container['csrf'] = function ($c) { return new \Slim\Csrf\Guard; };
 $container['configureValidation'] = function () {
   //Create the validators
   $accountValidator = v::alnum('-_')->noWhitespace()->length(1, 50);
-  $triggerValidator = v::regex('/^\\/\\w+$/')->length(1, 20);
+  $triggerValidator = v::regex('/^\\/[a-zA-Z0-9]+$/')->length(1, 20);
   $newValidators = array(
     'screen_name_new' => $accountValidator,
     'webhook_trigger_new' => $triggerValidator
   );
 
   $existingValidators = array(
-    'screen_name_' => $accountValidator,
     'webhook_trigger_' => $triggerValidator
   );
 
