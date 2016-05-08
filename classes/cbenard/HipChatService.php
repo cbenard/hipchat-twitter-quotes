@@ -18,17 +18,17 @@ class HipChatService {
     public function registerHook($installation, $webhook_trigger) {
         $this->ensureToken($installation);
         $sanitized_trigger = str_replace("/", "", $webhook_trigger);
-        $uri = "room/{$installation->room_id}/extension/webhook/twitterquote_{$sanitized_trigger}";
+        $uri = "room/{$installation->room_id}/extension/webhook/twitterquote_{$installation->room_id}_{$sanitized_trigger}";
         
         $request = new \stdClass;
         $request->name = "Twitter Quote Trigger";
         $request->authentication = "jwt";
-        $request->key = "twitterquote_{$sanitized_trigger}";
+        $request->key = "twitterquote_{$installation->room_id}_{$sanitized_trigger}";
         $request->event = "room_message";
         $request->pattern = $this->getHookPattern($webhook_trigger);
         $request->url = $this->container->config['global']['baseUrl'] . "/webhook";
         
-        $this->logger->info("Registering hook", [ "roomID" => $installation->room_id, "trigger" => "twitterquote_{$sanitized_trigger}", "request" => $request ]);
+        $this->logger->info("Registering hook", [ "roomID" => $installation->room_id, "trigger" => "twitterquote_{$installation->room_id}_{$sanitized_trigger}", "request" => $request ]);
         
         $response = \Httpful\Request::put($installation->api_url . $uri)
             ->addHeader("Authorization", "Bearer " . $installation->access_token)
@@ -43,9 +43,9 @@ class HipChatService {
     public function removeHook($installation, $webhook_trigger) {
         $this->ensureToken($installation);
         $sanitized_trigger = str_replace("/", "", $webhook_trigger);
-        $uri = "room/{$installation->room_id}/extension/webhook/twitterquote_{$sanitized_trigger}";
+        $uri = "room/{$installation->room_id}/extension/webhook/twitterquote_{$installation->room_id}_{$sanitized_trigger}";
         
-        $this->logger->info("Deleting hook", [ "roomID" => $installation->room_id, "trigger" => "twitterquote_{$sanitized_trigger}" ]);
+        $this->logger->info("Deleting hook", [ "roomID" => $installation->room_id, "trigger" => "twitterquote_{$installation->room_id}_{$sanitized_trigger}" ]);
         
         $response = \Httpful\Request::delete($installation->api_url . $uri)
             ->addHeader("Authorization", "Bearer " . $installation->access_token)
