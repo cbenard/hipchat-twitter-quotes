@@ -1,6 +1,8 @@
 # HipChat Twitter Quotes
 This application fetches tweets from an account on a regular basis and provides tweets based on partial searches in a HipChat room.
 
+**Requires PHP 5.5.**
+
 ## Installation Instructions
 1. Create a MySQL database and user and grant full permissions on the database to the user.
 2. Copy `config.php.dist` to `config.php`. Edit `config.php`, filling in required configuration values.
@@ -16,7 +18,7 @@ This application fetches tweets from an account on a regular basis and provides 
   * Only statuses newer than the latest are fetched, so this uses very little data.
 9. Add the integration to your HipChat rooms using the URL format:
   * `https://your_base_url/capabilities.json`
-10. Configure the Twitter account to monitor and the trigger command in the integration's Configure tab.
+10. Configure the Twitter accounts to monitor and the trigger commands in the integration's Configure tab.
 
 ## Usage
 If your trigger is `/tq`, you can use the following commands:
@@ -38,9 +40,6 @@ If your trigger is `/tq`, you can use the following commands:
 ### Usage
 ![Usage 1](https://raw.githubusercontent.com/cbenard/hipchat-twitter-quotes/master/web/assets/images/twitterquotes-screenshot-usage-1.png)
 ![Usage 2](https://raw.githubusercontent.com/cbenard/hipchat-twitter-quotes/master/web/assets/images/twitterquotes-screenshot-usage-2.png)
-
-## Notes
-This was developed using PHP 5.6. It should work with a **minimum of PHP 5.5**.
 
 ## Contributing
 Pull requests are welcome and will be reviewed promptly.
