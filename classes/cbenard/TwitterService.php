@@ -10,12 +10,14 @@ class TwitterService {
     private $bearer_token;
     private $client;
     private $container;
+    private $utc;
     
     public function __construct($container) {
         $this->container = $container;
         $this->key = $container->config['twitter']['key'];
         $this->secret = $container->config['twitter']['secret'];
         $this->client = new Client();
+        $this->utc = new \DateTimeZone("UTC");
     }
     
     public function getUserInfo($screen_name) {
@@ -34,7 +36,7 @@ class TwitterService {
             throw new \Exception("Unable to find screen name: " . $screen_name);
         }
         $result = (object)array(
-            'created_at' => new \DateTime($item->created_at),
+            'created_at' => new \DateTime($item->created_at, $this->utc),
             'id' => $item->id_str,
             'profile_image_url_https' => $item->profile_image_url_https,
             'name' => $item->name,
