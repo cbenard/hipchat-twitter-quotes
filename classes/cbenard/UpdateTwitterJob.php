@@ -138,21 +138,21 @@ class UpdateTwitterJob {
             'notify_new_tweets' => true,
         ]);
         
+        $tweetMapper = $this->db->mapper('\Entity\Tweet');
+        $tweets = $tweetMapper
+            ->where([ 'screen_name' => $twitter_screenname ])
+            ->order([ 'created_at' => 'DESC' ])
+            ->limit(min([ $maxNumber, $count ]));
+
+        // Chronological order up to 3
+        $reverseTweets = [];
+        foreach ($tweets as $tweet) {
+            array_unshift($reverseTweets, $tweet);
+        }
+
         if ($configurations) {
             foreach ($configurations as $configuration) {
-                $tweetMapper = $this->db->mapper('\Entity\Tweet');
-                $tweets = $tweetMapper
-                    ->where([ 'screen_name' => $configuration->screen_name ])
-                    ->order([ 'created_at' => 'DESC' ])
-                    ->limit(min([ $maxNumber, $count ]));
-                    
                 try {
-                    // Chronological order up to 3
-                    $reverseTweets = [];
-                    foreach ($tweets as $tweet) {
-                        array_unshift($reverseTweets, $tweet);
-                    }
-                    
                     foreach ($reverseTweets as $tweet) {
                         $tweet = (object)$tweet;
                         $message = $this->hipchat->createMessageForTweet($tweet);
