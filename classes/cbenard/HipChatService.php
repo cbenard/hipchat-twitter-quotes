@@ -99,6 +99,7 @@ class HipChatService {
         $htmlText = str_replace("\r\n", "\n", $tweet->text);
         $htmlText = str_replace("\r", "\n", $htmlText);
         $htmlText = str_replace("\n", "<br />", $htmlText);
+        $htmlText = htmlspecialchars_decode($htmlText);
 
         $twitterDate = new \DateTime($tweet->created_at->format("Y-m-d H:i:s"), $this->utc);
         $twitterDate->setTimezone(new \DateTimeZone($this->container->config['global']['timezone']));
@@ -110,7 +111,7 @@ class HipChatService {
         $respData->card = new \stdClass;
         $respData->card->style = "application";
         $respData->card->description = new \stdClass;
-        $respData->card->description->value = $tweet->text;
+        $respData->card->description->value = htmlspecialchars_decode($tweet->text);
         $respData->card->description->format = "text";
         $respData->card->format = "medium";
         $respData->card->url = "https://twitter.com/statuses/{$tweet->tweet_id}";

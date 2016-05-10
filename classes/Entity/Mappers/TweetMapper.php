@@ -35,7 +35,7 @@ class TweetMapper extends Mapper {
     }
     
     public function search($screen_name, $arguments) {
-        $argString = implode(" ", $arguments);
+        $argString = htmlspecialchars(implode(" ", $arguments));
 
         // Try for a direct match
         $tweet = $this
@@ -47,7 +47,7 @@ class TweetMapper extends Mapper {
             
         if (!$tweet) {
             // Try with words in order
-            $likeArgs = implode("%", $arguments);
+            $likeArgs = htmlspecialchars(implode("%", $arguments));
             $tweet = $this
                 ->query("SELECT * FROM `tweets` "
                     . "WHERE `text` LIKE ? "
@@ -58,7 +58,7 @@ class TweetMapper extends Mapper {
             
         if (!$tweet) {
             // Try with all words in any order
-            $likeArgs = array_map(function($item) { return "%{$item}%"; }, $arguments);
+            $likeArgs = array_map(function($item) { return htmlspecialchars("%{$item}%"); }, $arguments);
             array_unshift($likeArgs, $screen_name);
             $tweet = $this
                 ->query("SELECT * FROM `tweets` "
@@ -70,7 +70,7 @@ class TweetMapper extends Mapper {
             
         if (!$tweet) {
             // Try with any words in any order
-            $likeArgs = array_map(function($item) { return "%{$item}%"; }, $arguments);
+            $likeArgs = array_map(function($item) { return htmlspecialchars("%{$item}%"); }, $arguments);
             array_push($likeArgs, $screen_name);
             $tweet = $this
                 ->query("SELECT * FROM `tweets` "
