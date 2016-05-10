@@ -143,11 +143,11 @@ class ConfigurationController {
             if ($returnParameters['saved_screen_name']) {
                 try {
                     // Refresh tweets now
-                    $this->container->updatetwitterjob->update($returnParameters['saved_screen_name'], $backfill = false);
+                    $this->container->updatetwitterjob->update($returnParameters['saved_screen_name'], $backfill = false, $suppress_notification = true);
                     // For testing, but normally we don't want this much logging
                     // $container = $this->container;
                     // $u = new \cbenard\UpdateTwitterJob($this->container, function($msg) use ($container) { $container->logger->info($msg); });
-                    // $u->update($returnParameters['saved_screen_name']);
+                    // $u->update($returnParameters['saved_screen_name'], $backfill = false, $suppress_notification = true);
                 }
                 catch (\Exception $e) {
                     $this->container->logger->error("Error fetching new tweets after reconfiguration", [ "exception" => $e ]);

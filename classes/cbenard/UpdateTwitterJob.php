@@ -19,7 +19,7 @@ class UpdateTwitterJob {
         $this->consoleLogger = $consoleLogger;
     }
     
-    public function update($screen_name = null, $backfill = true) {
+    public function update($screen_name = null, $backfill = true, $suppress_notification = false) {
         $twitter_token = $this->globalSettings->getTwitterToken();
         
         if ($twitter_token) {
@@ -29,7 +29,7 @@ class UpdateTwitterJob {
 
         if ($screen_name) {
             $this->updateAccountInformation($screen_name);
-            $this->updateTweets($screen_name, $backfill);
+            $this->updateTweets($screen_name, $backfill, $suppress_notification);
         }
         else {
             $accounts = $this->getAccounts();
@@ -95,7 +95,7 @@ class UpdateTwitterJob {
         $this->log("Saved.\r\n");
     }
     
-    private function updateTweets($twitter_screenname, $backfill = true) {
+    private function updateTweets($twitter_screenname, $backfill = true, $suppress_notification = false) {
         $mapper = $this->db->mapper('\Entity\Tweet');
         $max_tweet = $mapper->latest($twitter_screenname);
         $max_tweet_id = $max_tweet ? $max_tweet->tweet_id : null;
@@ -122,7 +122,7 @@ class UpdateTwitterJob {
             }
         }
         
-        if ($initialCount) {
+        if ($initialCount && !$suppress_notification) {
             $this->sendUpdatedNotification($twitter_screenname, $initialCount, $backfillCount);
         }
         
