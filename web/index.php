@@ -7,6 +7,7 @@ if (PHP_VERSION_ID >= 50502) {
     ini_set("session.cookie_use_strict_mode", true);
 }
 
+session_cache_limiter(false);
 session_start();
         
 use \Psr\Http\Message\ServerRequestInterface as Request;
