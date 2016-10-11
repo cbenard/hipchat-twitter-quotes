@@ -1,5 +1,12 @@
 <?php
 
+ini_set("session.cookie_secure", true);
+ini_set("session.cookie_httponly", true);
+// Available starting in 5.5.2 and we only require 5.5
+if (PHP_VERSION_ID >= 50502) {
+    ini_set("session.cookie_use_strict_mode", true);
+}
+
 session_start();
         
 use \Psr\Http\Message\ServerRequestInterface as Request;

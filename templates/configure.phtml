@@ -54,7 +54,7 @@
         <?php endif; ?>
 
         <?php if (!isset($dont_display_form)) : ?>
-        <form method="POST" id="theform">
+        <form method="POST" id="theform" action="<?= $postUri ?>">
             <div class="groupcontainer">
                 <h3>Add New Account</h3>
                 <div class="form-group">
@@ -103,6 +103,7 @@
             </div>
             <?php endforeach; ?>
             <?php endif; ?>
+            <input type="hidden" name="installation_oauth_id" value="<?= $installation_oauth_id ?>">
             <input type="hidden" name="<?= $csrf_nameKey ?>" value="<?= $csrf_name ?>">
             <input type="hidden" name="<?= $csrf_valueKey ?>" value="<?= $csrf_value ?>">
         </form>

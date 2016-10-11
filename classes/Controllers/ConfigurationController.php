@@ -28,6 +28,7 @@ class ConfigurationController {
             $jwt = $this->container->jwt->validateRequest($request);
         }
         catch (\Firebase\JWT\ExpiredException $ex) {
+            $_SESSION["authenticated_for_{$installation_oauth_id}"] = false;
             $this->container->logger->info("Expired JWT token on configuration", [ "exception" => $ex, "request" => $request ]);
             $returnParameters = [
                 "errors" => [ "Authentication information expired. Please refresh." ],
@@ -37,17 +38,22 @@ class ConfigurationController {
                 ->withStatus(403);
         }
         
+        $installation_oauth_id = $jwt->iss;
+        $_SESSION["authenticated_for_{$installation_oauth_id}"] = true;
         $mapper = $this->container->db->mapper('\Entity\Installation');
-        $installation = $mapper->get($jwt->iss);
+        $installation = $mapper->get($installation_oauth_id);
 
         $joinMapper = $this->container->db->mapper('\Entity\InstallationTwitterUser');
-        $configurations = $joinMapper->where([ 'installations_oauth_id' => $jwt->iss ])->active();
-        $this->container->logger->info("configurations", [ "oauth_id" => $jwt->iss, "configurations" => $configurations->toArray() ]);
+        $configurations = $joinMapper->where([ 'installations_oauth_id' => $installation_oauth_id ])->active();
+        $this->container->logger->info("configurations", [ "oauth_id" => $installation_oauth_id, "configurations" => $configurations->toArray() ]);
         
         $response = $this->container->view->render($response, "configure.phtml", [
             "errors" => null,
             "success" => null,
             "configurations" => $configurations,
+
+            "postUri" => $request->getUri()->getPath(),
+            "installation_oauth_id" => $installation_oauth_id,
             
             "screen_name_new" => null,
             "webhook_trigger_new" => null,
@@ -65,13 +71,13 @@ class ConfigurationController {
     public function update(Request $request, Response $response, $args) {
         $body = $request->getParsedBody();
         $this->container->logger->info("Update Configuration Requested", [ 'request' => $body ]);
-        $jwt = null;
         
-        try {
-            $jwt = $this->container->jwt->validateRequest($request);
-        }
-        catch (\Firebase\JWT\ExpiredException $ex) {
-            $this->container->logger->error("Expired JWT token on configuration", [ "exception" => $ex, "request" => $request ]);
+        $installation_oauth_id = isset($_POST["installation_oauth_id"]) ? $_POST["installation_oauth_id"] : null;
+
+        if (!isset($_SESSION["authenticated_for_{$installation_oauth_id}"])
+            || $_SESSION["authenticated_for_{$installation_oauth_id}"] !== true) {
+
+            $this->container->logger->error("No authorized to edit room's configuration.", [ "installation_oauth_id" => $installation_oauth_id, "request" => $request, "session" => $_SESSION ]);
             $returnParameters = [
                 "errors" => [ "Authentication information expired. Please refresh." ],
                 "dont_display_form" => true
@@ -81,15 +87,19 @@ class ConfigurationController {
         }
         
         $mapper = $this->container->db->mapper('\Entity\Installation');
-        $installation = $mapper->get($jwt->iss);
+        $installation = $mapper->get($installation_oauth_id);
 
         $joinMapper = $this->container->db->mapper('\Entity\InstallationTwitterUser');
-        $configurations = $joinMapper->where([ 'installations_oauth_id' => $jwt->iss ])->active();
+        $configurations = $joinMapper->where([ 'installations_oauth_id' => $installation_oauth_id ])->active();
         
         $returnParameters = [
             "errors" => $this->getFlattenedErrors($this->configureValidation->getErrors()),
             "success" => null,
             "configurations" => $configurations,
+
+            "postUri" => $request->getUri()->getPath(),
+            "installation_oauth_id" => $installation_oauth_id,
+
             "saved_screen_name" => null,
 
             "screen_name_new" => null,
