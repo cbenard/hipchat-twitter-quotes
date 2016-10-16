@@ -41,7 +41,7 @@ class ConfigurationController {
         $installation_oauth_id = $jwt->iss;
         $_SESSION["authenticated_for_{$installation_oauth_id}"] = true;
         $mapper = $this->container->db->mapper('\Entity\Installation');
-        $installation = $mapper->get($installation_oauth_id);
+        $installation = $mapper->all()->with('twitter_authentication')->where(['oauth_id' => $installation_oauth_id]);
 
         $joinMapper = $this->container->db->mapper('\Entity\InstallationTwitterUser');
         $configurations = $joinMapper->where([ 'installations_oauth_id' => $installation_oauth_id ])->active();
@@ -87,7 +87,7 @@ class ConfigurationController {
         }
         
         $mapper = $this->container->db->mapper('\Entity\Installation');
-        $installation = $mapper->get($installation_oauth_id);
+        $installation = $mapper->all()->with('twitter_authentication')->where(['oauth_id' => $installation_oauth_id]);
 
         $joinMapper = $this->container->db->mapper('\Entity\InstallationTwitterUser');
         $configurations = $joinMapper->where([ 'installations_oauth_id' => $installation_oauth_id ])->active();
