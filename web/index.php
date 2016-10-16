@@ -19,13 +19,20 @@ $app = new \Slim\App($container);
 
 $app->get('/', '\Controllers\StaticContentController:index');
 $app->get('/capabilities.json', '\Controllers\StaticContentController:capabilities');
+
 $app->post('/installed', '\Controllers\InstallationController:install');
 $app->get('/uninstalled', '\Controllers\InstallationController:uninstall');
+
 $app->get('/configure', '\Controllers\ConfigurationController:display')
     ->add($container->csrf);
 $app->post('/configure', '\Controllers\ConfigurationController:update')
     ->add($container->csrf)
     ->add($container->configureValidation);
+
 $app->post('/webhook', '\Controllers\WebHookController:trigger');
+
+$app->get('/twitterauth/create', '\Controllers\TwitterAuthenticationController:start');
+$app->get('/twitterauth/receive', '\Controllers\TwitterAuthenticationController:start')
+    ->setName('twitterauth_receive');
 
 $app->run();

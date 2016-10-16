@@ -8,7 +8,6 @@ class TwitterAuthentication extends \Spot\Entity {
     public static function fields() {
         return [
             'id' => ['type' => 'integer', 'primary' => true, 'autoincrement' => true ],
-            'installation_oauth_id' => [ 'type' => 'string', 'length' => 255, 'required' => true ],
             'access_token' => [ 'type' => 'string', 'length' => 255 ],
             'access_token_secret' => [ 'type' => 'string', 'length' => 255 ],
             'is_completed' => [ 'type' => 'boolean', 'required' => true, 'value' => false ],

@@ -18,8 +18,8 @@ class Installation extends \Spot\Entity {
             'access_token_expiration' => [ 'type' => 'datetime', 'required' => false ],
             'created_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
             'updated_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
-            'twitter_screenname' => [ 'type' => 'string', 'required' => false, 'length' => 255 ],
             'webhook_trigger' => [ 'type' => 'string', 'required' => false, 'length' => 25 ],
+            'twitter_authentication_id' => [ 'type' => 'integer' ],
         ];
     }
 
@@ -35,7 +35,7 @@ class Installation extends \Spot\Entity {
         return [
             'configurations' => $mapper->hasMany($entity, '\Entity\InstallationTwitterUser', 'installations_oauth_id')->order(['created_on' => 'ASC']),
             'users' => $mapper->hasManyThrough($entity, '\Entity\TwitterUser', '\Entity\InstallationTwitterUser', 'screen_name', 'installations_oauth_id')->order(['created_on' => 'ASC']),
-            'twitter_authentication' => $mapper->hasOne($entity, '\Entity\TwitterAuthentication', 'installation_oauth_id'),
+            'twitter_authentication' => $mapper->belongsTo($entity, '\Entity\TwitterAuthentication', 'twitter_authentication_id'),
         ];
     }
 }
