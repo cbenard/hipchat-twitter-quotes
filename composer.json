@@ -1,21 +1,14 @@
 {
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/cbenard/Slim-Csrf"
-        }
-    ],
     "require": {
         "slim/slim": "^3.3",
-        "corbanb/freebird-php": "^0.2.3",
         "vlucas/spot2": "~2.0",
         "monolog/monolog": "^1.19",
         "slim/php-view": "^2.1",
         "firebase/php-jwt": "^3.0",
         "nategood/httpful": "^0.2.20",
         "ramsey/uuid": "^3.4",
-        "slim/csrf": "dev-allow-paragonie-random_compat-2.0",
         "davidepastore/slim-validation": "^0.1.0",
-        "jublonet/codebird-php": "^3.1"
+        "jublonet/codebird-php": "^3.1",
+        "slim/csrf": "^0.7.0"
     }
 }
