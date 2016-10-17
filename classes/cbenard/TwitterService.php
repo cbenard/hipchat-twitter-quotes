@@ -28,7 +28,7 @@ class TwitterService {
                 'screen_name' => $screen_name,
                 'include_entities' => 'false'
         ];
-        
+
         $response = $this->client->users_show($params, true);
         
         if (!isset($response->screen_name)) {
@@ -89,7 +89,7 @@ class TwitterService {
                 'max_id' => $before_id
         ];
         
-        $response = $this->client->api_request('statuses/user_timeline.json', $params);
+        $response = $this->client->statuses_userTimeline($params, true);
         
         $o = $this->getTweetsFromResponse($response);
         $result = array_map(function($item) {
