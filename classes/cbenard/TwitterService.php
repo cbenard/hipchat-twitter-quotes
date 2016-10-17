@@ -1,7 +1,7 @@
 <?php
 namespace cbenard;
 
-use Freebird\Services\freebird\Client;
+use \cbenard\Codebird;
 
 class TwitterService {
 
@@ -16,7 +16,8 @@ class TwitterService {
         $this->container = $container;
         $this->key = $container->config['twitter']['key'];
         $this->secret = $container->config['twitter']['secret'];
-        $this->client = new Client();
+        Codebird::setConsumerKey($this->key, $this->secret);
+        $this->client = Codebird::getInstance();
         $this->utc = new \DateTimeZone("UTC");
     }
     
@@ -28,19 +29,17 @@ class TwitterService {
                 'include_entities' => 'false'
         ];
         
-        $response = $this->client->api_request('users/show.json', $params);
+        $response = $this->client->users_show($params, true);
         
-        $item = json_decode($response);
-        
-        if (!isset($item->screen_name)) {
+        if (!isset($response->screen_name)) {
             throw new \Exception("Unable to find screen name: " . $screen_name);
         }
         $result = (object)array(
-            'created_at' => new \DateTime($item->created_at, $this->utc),
-            'id' => $item->id_str,
-            'profile_image_url_https' => $item->profile_image_url_https,
-            'name' => $item->name,
-            'screen_name' => $item->screen_name
+            'created_at' => new \DateTime($response->created_at, $this->utc),
+            'id' => $response->id_str,
+            'profile_image_url_https' => $response->profile_image_url_https,
+            'name' => $response->name,
+            'screen_name' => $response->screen_name
         );
         
         return $result;
@@ -62,9 +61,9 @@ class TwitterService {
             $params['since_id'] = $since_id;
         }
         
-        $response = $this->client->api_request('statuses/user_timeline.json', $params);
-        
-        $o = json_decode($response);
+        $response = $this->client->statuses_userTimeline($params, true);
+
+        $o = $this->getTweetsFromResponse($response);
         $result = array_map(function($item) {
             return (object)array(
                 'created_at' => new \DateTime($item->created_at),
@@ -92,7 +91,7 @@ class TwitterService {
         
         $response = $this->client->api_request('statuses/user_timeline.json', $params);
         
-        $o = json_decode($response);
+        $o = $this->getTweetsFromResponse($response);
         $result = array_map(function($item) {
             return (object)array(
                 'created_at' => new \DateTime($item->created_at),
@@ -109,11 +108,11 @@ class TwitterService {
     
     private function runPreflightChecks() {
         if ($this->bearer_token) {
-            $this->client->set_bearer_token($this->bearer_token);
+            Codebird::setBearerToken($this->bearer_token);
         }
         else {
-            $this->client->init_bearer_token($this->key, $this->secret);
-            $this->bearer_token = $this->client->get_bearer_token();
+            $this->client->oauth2_token();
+            $this->bearer_token = Codebird::getBearerToken();
         }
     }
     
@@ -123,5 +122,17 @@ class TwitterService {
     
     public function setBearerToken($bearer_token) {
         $this->bearer_token = $bearer_token;
+    }
+
+    private function getTweetsFromResponse($response) {
+        $arr = (array)$response;
+        $keys = array_keys($arr);
+        foreach ($keys as $key) {
+            if (!is_numeric($key)) {
+                unset($arr[$key]);
+            }
+        }
+
+        return $arr;
     }
 }
