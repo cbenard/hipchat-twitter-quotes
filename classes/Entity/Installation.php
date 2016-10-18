@@ -34,7 +34,7 @@ class Installation extends \Spot\Entity {
     {
         return [
             'configurations' => $mapper->hasMany($entity, '\Entity\InstallationTwitterUser', 'installations_oauth_id')->order(['created_on' => 'ASC']),
-            'users' => $mapper->hasManyThrough($entity, '\Entity\TwitterUser', '\Entity\InstallationTwitterUser', 'screen_name', 'installations_oauth_id')->order(['created_on' => 'ASC']),
+            'users' => $mapper->hasManyThrough($entity, '\Entity\TwitterUser', '\Entity\InstallationTwitterUser', 'user_id', 'installations_oauth_id')->order(['created_on' => 'ASC']),
             'twitter_authentication' => $mapper->belongsTo($entity, '\Entity\TwitterAuthentication', 'twitter_authentication_id'),
         ];
     }

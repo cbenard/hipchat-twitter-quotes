@@ -82,7 +82,7 @@
                     <img class="twitter-user-avatar" src="<?= $conf->user->profile_image_url_https ?>" />
                     <?php if ($conf->user->screen_name != $conf->user->name): ?>
                     <span class="twitter-user-label"><?= $conf->user->name ?></span>
-                    <span class="twitter-user-sublabel">@<?= $conf->screen_name ?></span>
+                    <span class="twitter-user-sublabel">@<?= $conf->user->screen_name ?></span>
                     <?php else: ?>
                     <span class="twitter-user-label">@<?= $conf->screen_name ?></span>
                     <?php endif; ?>

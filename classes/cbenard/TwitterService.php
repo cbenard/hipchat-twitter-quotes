@@ -21,13 +21,30 @@ class TwitterService {
         $this->utc = new \DateTimeZone("UTC");
     }
     
-    public function getUserInfo($screen_name) {
+    public function getUserInfoByName($screen_name) {
+        return $this->getUserInfo($screen_name, null);
+    }
+
+    public function getUserInfoByID($id_str) {
+        return $this->getUserInfo(null, $id_str);
+    }
+
+    private function getUserInfo($screen_name, $id_str) {
         $this->runPreflightChecks();
         
         $params = [
-                'screen_name' => $screen_name,
                 'include_entities' => 'false'
         ];
+
+        if ($id_str) {
+            $params['user_id'] = $id_str;
+        }
+        elseif ($screen_name) {
+            $params['screen_name'] = $screen_name;
+        }
+        else {
+            throw new \Exception("Unable to find user id or screenname in input attempting to get user info.");
+        }
 
         $response = $this->client->users_show($params, true);
         
@@ -45,13 +62,14 @@ class TwitterService {
         return $result;
     }
     
-    public function getTweetsSince($screen_name, $since_id = null) {
+    public function getTweetsSince($user_id, $since_id = null) {
         $this->runPreflightChecks();
         
         $params = [
-                'screen_name' => $screen_name,
+                'user_id' => $user_id,
                 'count' => 200,
-                'trim_user' => 'true',
+                // We now want this to update in one step
+                // 'trim_user' => 'true',
                 'exclude_replies' => 'true',
                 'contributor_details' => 'false',
                 'include_rts' => 'false'
@@ -69,20 +87,21 @@ class TwitterService {
                 'created_at' => new \DateTime($item->created_at),
                 'id' => $item->id_str,
                 'text' => $item->text,
-                'user_id' => $item->user->id_str
+                'user' => $item->user,
             );
         }, $o);
         
         return $result;
     }
     
-    public function getTweetsBefore($screen_name, $before_id = null) {
+    public function getTweetsBefore($user_id, $before_id = null) {
         $this->runPreflightChecks();
         
         $params = [
-                'screen_name' => $screen_name,
+                'user_id' => $user_id,
                 'count' => 200,
-                'trim_user' => 'true',
+                // We now want this to update in one step
+                // 'trim_user' => 'true',
                 'exclude_replies' => 'true',
                 'contributor_details' => 'false',
                 'include_rts' => 'false',
@@ -97,7 +116,7 @@ class TwitterService {
                 'created_at' => new \DateTime($item->created_at),
                 'id' => $item->id_str,
                 'text' => $item->text,
-                'user_id' => $item->user->id_str
+                'user' => $item->user,
             );
         }, $o);
         

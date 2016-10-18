@@ -4,7 +4,7 @@ namespace Entity\Mappers;
 use \Spot\Mapper;
 
 class InstallationTwitterUserMapper extends Mapper {
-    public function addNew($oauth_id, $screen_name, $webhook_trigger, $notify_new_tweets) {
+    public function addNew($oauth_id, $id_str, $screen_name, $display_name, $webhook_trigger, $notify_new_tweets) {
         if ($this
             ->where([
                 'webhook_trigger' => $webhook_trigger,
@@ -18,7 +18,7 @@ class InstallationTwitterUserMapper extends Mapper {
         
         if ($this
             ->where([
-                'screen_name' => $screen_name,
+                'user_id' => $id_str,
                 'installations_oauth_id' => $oauth_id,
                 'is_active' => true
             ])
@@ -29,7 +29,7 @@ class InstallationTwitterUserMapper extends Mapper {
         
         return $this->create([
             'installations_oauth_id' => $oauth_id,
-            'screen_name' => $screen_name,
+            'user_id' => $id_str,
             'webhook_trigger' => $webhook_trigger,
             'notify_new_tweets' => $notify_new_tweets,
         ]);
@@ -71,13 +71,13 @@ class InstallationTwitterUserMapper extends Mapper {
     {
         return [
             'active' => function ($query) {
-                return $query->where([ "is_active" => true ]);
+                return $query->where([ "is_active" => true ])->with('user');
             },
             'inactive' => function ($query) {
-                return $query->where([ "is_active" => false ]);
+                return $query->where([ "is_active" => false ])->with('user');
             },
             'wantsNotifications' => function ($query) {
-                return $query->where([ "notify_new_tweets" => true ]);
+                return $query->where([ "notify_new_tweets" => true ])->with('user');
             },
         ];
     }

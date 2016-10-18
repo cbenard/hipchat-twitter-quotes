@@ -7,8 +7,8 @@ class TwitterUser extends \Spot\Entity {
     
     public static function fields() {
         return [
-            'screen_name' => [ 'type' => 'string', 'primary' => true, 'length' => 255 ],
-            'user_id' => [ 'type' => 'string', 'required' => true, 'unique' => true, 'length' => 255 ],
+            'user_id' => [ 'type' => 'string', 'primary' => true, 'length' => 255 ],
+            'screen_name' => [ 'type' => 'string', 'required' => true, 'length' => 255 ],
             'profile_image_url_https' => [ 'type' => 'string', 'required' => true, 'length' => 500 ],
             'name' => [ 'type' => 'string', 'required' => true, 'length' => 255 ],
             'created_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],

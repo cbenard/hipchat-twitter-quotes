@@ -13,7 +13,6 @@ class Tweet extends \Spot\Entity {
             'created_at' => [ 'type' => 'datetime', 'required' => true, 'index' => true ],
             'text' => [ 'type' => 'string', 'required' => true, 'length' => 255 ],
             'user_id' => [ 'type' => 'string', 'required' => true, 'length' => 255 ],
-            'screen_name' => [ 'type' => 'string', 'required' => true, 'index' => true, 'length' => 255 ],
             'created_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
             'updated_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
         ];
@@ -29,7 +28,7 @@ class Tweet extends \Spot\Entity {
     public static function relations(\Spot\MapperInterface $mapper, \Spot\EntityInterface $entity)
     {
         return [
-            'user' => $mapper->belongsTo($entity, '\Entity\TwitterUser', 'screen_name'),
+            'user' => $mapper->belongsTo($entity, '\Entity\TwitterUser', 'user_id'),
         ];
     }
 }

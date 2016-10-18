@@ -138,7 +138,7 @@ class WebHookController {
     
     private function randomQuote($installation, $matchingRecord) {
         $this->container->logger->info("Random quote requested");
-        $tweet = $this->tweetMapper->random($matchingRecord->screen_name);
+        $tweet = $this->tweetMapper->random($matchingRecord->user_id);
         $respData = new \stdClass;
         
         if (!$tweet) {
@@ -155,7 +155,7 @@ class WebHookController {
     
     private function latest($installation, $matchingRecord) {
         $this->container->logger->info("Latest quote requested");
-        $tweet = $this->tweetMapper->latest($matchingRecord->screen_name);
+        $tweet = $this->tweetMapper->latest($matchingRecord->user_id);
         $respData = new \stdClass;
         
         if (!$tweet) {
@@ -172,7 +172,7 @@ class WebHookController {
     
     private function quoteSearch($installation, $matchingRecord, $arguments) {
         $this->container->logger->info("Quote search requested", [ "arguments" => implode(" ", $arguments) ]);
-        $tweet = $this->tweetMapper->search($matchingRecord->screen_name, $arguments);
+        $tweet = $this->tweetMapper->search($matchingRecord->user_id, $arguments);
         $respData = new \stdClass;
         
         if (!$tweet) {
@@ -200,15 +200,15 @@ class WebHookController {
             . "<li><strong><code>{$matchingRecord->webhook_trigger} search text</code></strong> &ndash; Most recent matching quote for search text</li>"
             . "</ul>";
             
-        if (count($installation->configurations) > 1) {
+        if (count($installation->configurations->active()) > 1) {
             $accountplurality = count($installation->configurations) > 2 ? "accounts" : "account";
             $respData->message .= "<br />I also monitor the following {$accountplurality}:<ul>";
-            foreach ($installation->configurations as $configuration) {
+            foreach ($installation->configurations->active() as $configuration) {
                 if ($configuration->id == $matchingRecord->id) {
                     continue;
                 }
                 else {
-                    $respData->message .= "<li><a href=\"https://twitter.com/{$configuration->screen_name}\">@{$configuration->screen_name}</a> "
+                    $respData->message .= "<li><a href=\"https://twitter.com/{$configuration->user->screen_name}\">@{$configuration->user->screen_name}</a> "
                         . "&ndash; <strong><code>{$configuration->webhook_trigger}</code></strong></li>";
                 }
             }

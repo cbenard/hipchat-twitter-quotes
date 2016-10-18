@@ -176,13 +176,19 @@ class ConfigurationController {
     }
     
     private function addNew($installation, $body, Request $request, Response $response, $args, $returnParameters) {
-        $mapper = $this->container->db->mapper('\Entity\InstallationTwitterUser');
         $screen_name = strtolower(trim($body['screen_name_new']));
         $webhook_trigger = strtolower(trim($body['webhook_trigger_new']));
         $notify_new_tweets = isset($body['notify_new_tweets_new']) && $body['notify_new_tweets_new'] == "on" ? true : false;
-        
+        $id_str = null;
+        $display_name = null;
+        $profile_image_url_https = null;
+
         try {
-            $user = $this->twitter->getUserInfo($screen_name);
+            $user = $this->twitter->getUserInfoByName($screen_name);
+            $id_str = $user->id;
+            $display_name = $user->name;
+            $screen_name = $user->screen_name;
+            $profile_image_url_https = $user->profile_image_url_https;
         }
         catch (\Exception $ex) {
             $this->container->logger->error("Unable to verify twitter account", [ "screen_name" => $screen_name, "request" => $request ]);
@@ -195,7 +201,30 @@ class ConfigurationController {
         }
         
         try {
-            $mapper->addNew($installation->oauth_id, $screen_name, $webhook_trigger, $notify_new_tweets);
+            $mapper = $this->container->db->mapper('\Entity\TwitterUser');
+            $user = $mapper->get($id_str);
+            if (!$user) {
+                $mapper->create([
+                    'user_id' => $id_str,
+                    'screen_name' => $screen_name,
+                    'name' => $display_name,
+                    'profile_image_url_https' => $profile_image_url_https
+                ]);
+            }
+        }
+        catch (\Exception $ex) {
+            $this->container->logger->error("Unable to verify create local twitter account", [ "screen_name" => $screen_name, "request" => $request ]);
+            $returnParameters["errors"] = [ "Unable to create local Twitter account information for @{$screen_name}." ];
+
+            $returnParameters["screen_name_new"] = $body['screen_name_new'];
+            $returnParameters["webhook_trigger_new"] = $body['webhook_trigger_new'];
+            $returnParameters["notify_new_tweets_new"] = isset($body['notify_new_tweets_new']) ? $body['notify_new_tweets_new'] : null;
+            return $returnParameters;
+        }
+        
+        try {
+            $mapper = $this->container->db->mapper('\Entity\InstallationTwitterUser');
+            $mapper->addNew($installation->oauth_id, $id_str, $screen_name, $display_name, $webhook_trigger, $notify_new_tweets);
             $this->hipchat->registerHook($installation, $webhook_trigger);
             $returnParameters["success"] = "Now following @{$screen_name} with {$webhook_trigger}";
             $returnParameters["saved_screen_name"] = $screen_name;
@@ -225,8 +254,8 @@ class ConfigurationController {
                 $this->hipchat->removeHook($installation, $old->webhook_trigger);
             }
             $this->hipchat->registerHook($installation, $webhook_trigger);
-            $returnParameters["success"] = "Updated @{$old->screen_name} with {$webhook_trigger}";
-            $returnParameters["saved_screen_name"] = $old->screen_name;
+            $returnParameters["success"] = "Updated @{$old->user->screen_name} with {$webhook_trigger}";
+            $returnParameters["saved_screen_name"] = $old->user->screen_name;
         }
         catch (\Exception $ex) {
             $this->container->logger->error("Error saving existing configuration", [ "exception" => $ex ]);
@@ -281,7 +310,7 @@ class ConfigurationController {
             $accountplurality = count($installation->configurations) > 2 ? "accounts" : "account";
             $message->message .= "I am now monitoring the following {$accountplurality}:<br /><ul>";
             foreach ($configurations as $configuration) {
-                $message->message .= "<li><a href=\"https://twitter.com/{$configuration->screen_name}\">@{$configuration->screen_name}</a> "
+                $message->message .= "<li><a href=\"https://twitter.com/{$configuration->user->screen_name}\">@{$configuration->user->screen_name}</a> "
                     . "&ndash; <strong><code>{$configuration->webhook_trigger}</code></strong></li>";
             }
             $message->message .= "</ul>";
