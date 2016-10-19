@@ -153,7 +153,7 @@ class ConfigurationController {
             if ($returnParameters['saved_screen_name']) {
                 try {
                     // Refresh tweets now
-                    $this->container->updatetwitterjob->update($returnParameters['saved_screen_name'], $backfill = false, $suppress_notification = true);
+                    $this->container->updatetwitterjob->updateSingle($installation, $returnParameters['saved_screen_name']);
                     // For testing, but normally we don't want this much logging
                     // $container = $this->container;
                     // $u = new \cbenard\UpdateTwitterJob($this->container, function($msg) use ($container) { $container->logger->info($msg); });

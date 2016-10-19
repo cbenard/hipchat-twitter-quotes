@@ -20,8 +20,8 @@ class UpdateTwitterJob {
         $this->consoleLogger = $consoleLogger;
         $this->utc = new \DateTimeZone("UTC");
     }
-    
-    public function update($screen_name = null, $backfill = true, $suppress_notification = false) {
+
+    public function updateSingle($installation, $screen_name, $backfill = false, $suppress_notification = true) {
         $twitter_token = $this->globalSettings->getTwitterToken();
         
         if ($twitter_token) {
@@ -29,42 +29,54 @@ class UpdateTwitterJob {
             $this->twitter->setBearerToken($twitter_token);
         }
 
-        if ($screen_name) {
-            $this->updateAccountInformation($screen_name);
-            $this->updateTweetsByName($screen_name, $backfill, $suppress_notification);
+        $this->updateAccountInformation($screen_name);
+        $this->updateTweetsByName($screen_name, $backfill, $suppress_notification);
+
+        if (!$twitter_token && $this->twitter->getBearerToken()) {
+            $this->log("Saving new Twitter bearer token...");
+            $this->globalSettings->setTwitterToken($this->twitter->getBearerToken());
+            $this->log("Done.\r\n");
         }
-        else {
-            $accounts = $this->getAccounts();
-            
-            foreach ($accounts as $user_id) {
-                try {
-                    $newCount = $this->updateTweetsByID($user_id, $backfill);
+    }
     
-                    if (!$newCount) {
-                        // If there are no new tweets to use for updates and
-                        //   account hasn't updated in > 1hr, update account info
-                        $now = new \DateTime;
-                        $now->modify("-1 hour");
-                        $mapper = $this->db->mapper('\Entity\TwitterUser');
-                        $currentRecord = $mapper->get($user_id);
-                        
-                        if ($currentRecord->updated_on < $now) {
-                            $this->updateAccountInformation(null, $user_id);
-                        }
+    public function updateAll($backfill = true, $suppress_notification = true) {
+        $twitter_token = $this->globalSettings->getTwitterToken();
+        
+        if ($twitter_token) {
+            $this->log("Using previous Twitter bearer token.\r\n");
+            $this->twitter->setBearerToken($twitter_token);
+        }
+
+        $accounts = $this->getAccounts();
+        
+        foreach ($accounts as $user_id) {
+            try {
+                $newCount = $this->updateTweetsByID($user_id, $backfill);
+
+                if (!$newCount) {
+                    // If there are no new tweets to use for updates and
+                    //   account hasn't updated in > 1hr, update account info
+                    $now = new \DateTime;
+                    $now->modify("-1 hour");
+                    $mapper = $this->db->mapper('\Entity\TwitterUser');
+                    $currentRecord = $mapper->get($user_id);
+                    
+                    if ($currentRecord->updated_on < $now) {
+                        $this->updateAccountInformation(null, $user_id);
                     }
                 }
-                catch (\Exception $ex) {
-                    $this->log("Unable to fetch information for ID: ". $user_id);
-                    $this->container->logger->error("Unable to run twitter update job", [ "screen_name" => $twitter_screenname, "exception" => $ex ]);
-                }
             }
-            
-            $this->globalSettings->setLastUpdated();
-            
-            $this->log("Running orphan cleanup...");
-            $orphanCleanupSuccess = $this->container->orphan->cleanup();
-            $this->log(($orphanCleanupSuccess ? "Success" : "Failed") . ".\r\n");
+            catch (\Exception $ex) {
+                $this->log("Unable to fetch information for ID: ". $user_id);
+                $this->container->logger->error("Unable to run twitter update job", [ "screen_name" => $twitter_screenname, "exception" => $ex ]);
+            }
         }
+        
+        $this->globalSettings->setLastUpdated();
+        
+        $this->log("Running orphan cleanup...");
+        $orphanCleanupSuccess = $this->container->orphan->cleanup();
+        $this->log(($orphanCleanupSuccess ? "Success" : "Failed") . ".\r\n");
 
         if (!$twitter_token && $this->twitter->getBearerToken()) {
             $this->log("Saving new Twitter bearer token...");

@@ -58,7 +58,7 @@ class WebHookController {
             
             if ($lastUpdated < $now) {
                 $this->container->logger->info("Running full twitter update because it's been a long time (no cron?)", [ "last_updated" => $lastUpdated ]);
-                $this->container->updatetwitterjob->update();
+                $this->container->updatetwitterjob->updateAll();
             }
         }
         catch (\Exception $ex) {
