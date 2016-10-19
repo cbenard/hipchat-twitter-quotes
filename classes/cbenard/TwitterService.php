@@ -154,4 +154,27 @@ class TwitterService {
 
         return $arr;
     }
+
+    public function oauthRequestToken($callbackUrl) {
+        return $this->client->oauth_requestToken([
+            'oauth_callback' => $callbackUrl
+        ]);
+    }
+
+    public function oauthAccessToken($request_token, $request_token_secret, $oauth_verifier) {
+        $this->setToken($request_token, $request_token_secret);
+
+        return $this->client->oauth_accessToken([
+            'oauth_verifier' => $oauth_verifier
+        ]);
+    }
+
+    public function setToken($token, $token_secret) {
+        return $this->client->setToken($token, $token_secret);
+    }
+
+    public function oauthAuthorizationUrl($request_token, $request_token_secret) {
+        $this->setToken($request_token, $request_token_secret);
+        return $this->client->oauth_authorize();
+    }
 }

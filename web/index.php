@@ -31,8 +31,9 @@ $app->post('/configure', '\Controllers\ConfigurationController:update')
 
 $app->post('/webhook', '\Controllers\WebHookController:trigger');
 
-$app->get('/twitterauth/create', '\Controllers\TwitterAuthenticationController:start');
-$app->get('/twitterauth/receive', '\Controllers\TwitterAuthenticationController:start')
-    ->setName('twitterauth_receive');
+$app->get('/twitterauth/create', '\Controllers\TwitterAuthenticationController:create')
+    ->setName('twitterauth_create');
+$app->get('/twitterauth/receive', '\Controllers\TwitterAuthenticationController:complete')
+    ->setName('twitterauth_complete');
 
 $app->run();

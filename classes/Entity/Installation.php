@@ -18,7 +18,6 @@ class Installation extends \Spot\Entity {
             'access_token_expiration' => [ 'type' => 'datetime', 'required' => false ],
             'created_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
             'updated_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
-            'webhook_trigger' => [ 'type' => 'string', 'required' => false, 'length' => 25 ],
             'twitter_authentication_id' => [ 'type' => 'integer' ],
         ];
     }
