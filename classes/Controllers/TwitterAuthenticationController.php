@@ -127,10 +127,20 @@ class TwitterAuthenticationController {
         $installation->twitter_authentication_id = $auth->id;
         $installationMapper->save($installation);        
 
+        $currentInfo = $this->twitter->verifyCredentials($auth->access_token, $auth->access_token_secret);
+
+        $auth->user_id = $currentInfo->id;
+        $auth->screen_name = $currentInfo->screen_name;
+        $auth->profile_image_url_https = $currentInfo->profile_image_url_https;
+        $auth->name = $currentInfo->name;
+        $auth->verified_on = new \DateTime;
+        $authMapper->save($auth);
+
         //return $response;
         // Testing
         $body = $response->getBody();
-        $body->write("Done.\n" . print_r($auth, true));
+        $body->write("Done.\n");
+        // $body->write(print_r($auth, true));
         return $response->withHeader('Content-Type', 'text/plain');
     }
 

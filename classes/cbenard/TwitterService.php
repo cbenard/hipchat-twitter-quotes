@@ -21,16 +21,32 @@ class TwitterService {
         $this->utc = new \DateTimeZone("UTC");
     }
     
-    public function getUserInfoByName($screen_name) {
-        return $this->getUserInfo($screen_name, null);
+    public function getUserInfoByName($screen_name, $access_token = null, $access_token_secret = null) {
+        return $this->getUserInfo($screen_name, null, $access_token, $access_token_secret);
     }
 
-    public function getUserInfoByID($id_str) {
+    public function getUserInfoByID($id_str, $access_token = null, $access_token_secret = null) {
         return $this->getUserInfo(null, $id_str);
     }
 
-    private function getUserInfo($screen_name, $id_str) {
-        $this->runPreflightChecks();
+    public function verifyCredentials($access_token, $access_token_secret) {
+        $this->runPreflightChecks($access_token, $access_token_secret);
+
+        $response = $this->client->account_verifyCredentials();
+
+        $result = (object)array(
+            'created_at' => new \DateTime($response->created_at, $this->utc),
+            'id' => $response->id_str,
+            'profile_image_url_https' => $response->profile_image_url_https,
+            'name' => $response->name,
+            'screen_name' => $response->screen_name
+        );
+
+        return $result;
+    }
+
+    private function getUserInfo($screen_name, $id_str, $access_token = null, $access_token_secret = null) {
+        $this->runPreflightChecks($access_token, $access_token_secret);
         
         $params = [
                 'include_entities' => 'false'
@@ -62,8 +78,8 @@ class TwitterService {
         return $result;
     }
     
-    public function getTweetsSince($user_id, $since_id = null) {
-        $this->runPreflightChecks();
+    public function getTweetsSince($user_id, $since_id = null, $access_token = null, $access_token_secret = null) {
+        $this->runPreflightChecks($access_token, $access_token_secret);
         
         $params = [
                 'user_id' => $user_id,
@@ -94,8 +110,8 @@ class TwitterService {
         return $result;
     }
     
-    public function getTweetsBefore($user_id, $before_id = null) {
-        $this->runPreflightChecks();
+    public function getTweetsBefore($user_id, $before_id = null, $access_token = null, $access_token_secret = null) {
+        $this->runPreflightChecks($access_token, $access_token_secret);
         
         $params = [
                 'user_id' => $user_id,
@@ -125,13 +141,17 @@ class TwitterService {
         return $result;
     }
     
-    private function runPreflightChecks() {
+    private function runPreflightChecks($access_token = null, $access_token_secret = null) {
         if ($this->bearer_token) {
             Codebird::setBearerToken($this->bearer_token);
         }
         else {
             $this->client->oauth2_token();
             $this->bearer_token = Codebird::getBearerToken();
+        }
+
+        if ($access_token && $access_token_secret) {
+            $this->setToken($access_token, $access_token_secret);
         }
     }
     
@@ -171,6 +191,10 @@ class TwitterService {
 
     public function setToken($token, $token_secret) {
         return $this->client->setToken($token, $token_secret);
+    }
+
+    public function logout() {
+        return $this->client->logout();
     }
 
     public function oauthAuthorizationUrl($request_token, $request_token_secret) {

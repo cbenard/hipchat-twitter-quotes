@@ -2,6 +2,8 @@
 
 namespace cbenard;
 
+use \cbenard\ErrorStatus;
+
 class UpdateTwitterJob {
     private $container;
     private $db;
