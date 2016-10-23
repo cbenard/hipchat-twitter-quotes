@@ -1,6 +1,6 @@
 <?php
 
-class ErrorStatus {
+class TwitterErrorStatus {
     public static $NONE = 0;
     public static $INVALID_TOKEN = 1;
     public static $UNABLE_TO_FOLLOW = 2;

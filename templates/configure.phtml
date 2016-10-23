@@ -30,6 +30,15 @@
             .groupcontainer {
                 width: 300px;
             }
+
+            #sign-in-with-twitter-button {
+                width: 158px;
+                height: 28px;
+                margin: 0;
+                padding: 0;
+                cursor: pointer;
+                background: url('<?= $baseUrl ?>/assets/images/sign-in-with-twitter-gray.png');
+            }
         </style>
     </head>
     <body>
@@ -53,7 +62,16 @@
         </div>
         <?php endif; ?>
 
-        <?php if (!isset($dont_display_form)) : ?>
+        <?php if (!isset($dont_display_form)): ?>
+
+        <?php if (!isset($twitter_authentication_screen_name) || !$twitter_authentication_screen_name): ?>
+            <div id="sign-in-with-twitter-container">
+                <img id="sign-in-with-twitter-button" />
+                <p>Connect to Twitter to follow protected accounts with Twitter Quotes.</p>
+            </div>
+        <?php else: ?>
+        <?php endif; ?>
+
         <form method="POST" id="theform" action="<?= $postUri ?>">
             <div class="groupcontainer">
                 <h3>Add New Account</h3>
@@ -122,8 +140,29 @@
                     $(this).closest(".groupcontainer").find("input[name^='save_']").click();
                 }
             });
-            window.parent.parent.scrollTo(0, 0);
+            try {
+                window.parent.parent.scrollTo(0, 0);
+            } catch (ex) {}
+
+            $('#sign-in-with-twitter-button').click(function(e) {
+                var top = (screen.height - 600) / 2;
+                var left = (screen.width - 400) / 2;
+
+                var popup = window.open(
+                    '<?= $baseUrl ?>/twitterauth/create?installation_oauth_id=<?= urlencode($installation_oauth_id) ?>',
+                    'twitterauth',
+                    'height=300,width=400,location=1,menubar=0,resizable=1,status=0,toolbar=0,top=' + top + ',left=' + left
+                );
+
+                if (!popup) {
+                    alert('Unable to create popup window for Twitter authentication. Check your popup blocker.');
+                }
+            });
         });
+
+        function twitter_auth_callback() {
+            window.location = '<?= $baseUrl ?>/configure?installation_oauth_id=<?= urlencode($installation_oauth_id) ?>';
+        }
         </script>
     </body>
 </html>

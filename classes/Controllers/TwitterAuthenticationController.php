@@ -138,10 +138,14 @@ class TwitterAuthenticationController {
 
         //return $response;
         // Testing
-        $body = $response->getBody();
-        $body->write("Done.\n");
+        // $body = $response->getBody();
+        // $body->write("Done.\n");
         // $body->write(print_r($auth, true));
-        return $response->withHeader('Content-Type', 'text/plain');
+        // return $response->withHeader('Content-Type', 'text/plain');
+        $response = $this->container->view->render($response, "twitterauth_receive.phtml", [
+        ]);
+
+        return $response;
     }
 
     private function runPreFlightChecks($installation_oauth_id) {

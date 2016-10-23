@@ -22,24 +22,33 @@ class ConfigurationController {
     
     public function display(Request $request, Response $response, $args) {
         $this->container->logger->info("Configuration Requested");
+        $params = $request->getQueryParams();
         $jwt = null;
         
-        try {
-            $jwt = $this->container->jwt->validateRequest($request);
+        $installation_oauth_id = isset($params["installation_oauth_id"]) ? $params["installation_oauth_id"] : null;
+
+        if (!$installation_oauth_id
+            || !isset($_SESSION["authenticated_for_{$installation_oauth_id}"])
+            || $_SESSION["authenticated_for_{$installation_oauth_id}"] !== true) {
+
+            try {
+                $jwt = $this->container->jwt->validateRequest($request);
+            }
+            catch (\Firebase\JWT\ExpiredException $ex) {
+                $_SESSION["authenticated_for_{$installation_oauth_id}"] = false;
+                $this->container->logger->info("Expired JWT token on configuration", [ "exception" => $ex, "request" => $request ]);
+                $returnParameters = [
+                    "errors" => [ "Authentication information expired. Please refresh." ],
+                    "dont_display_form" => true
+                ];
+                return $this->container->view->render($response, "configure.phtml", $returnParameters)
+                    ->withStatus(403);
+            }
+            
+            $installation_oauth_id = $jwt->iss;
+            $_SESSION["authenticated_for_{$installation_oauth_id}"] = true;
         }
-        catch (\Firebase\JWT\ExpiredException $ex) {
-            $_SESSION["authenticated_for_{$installation_oauth_id}"] = false;
-            $this->container->logger->info("Expired JWT token on configuration", [ "exception" => $ex, "request" => $request ]);
-            $returnParameters = [
-                "errors" => [ "Authentication information expired. Please refresh." ],
-                "dont_display_form" => true
-            ];
-            return $this->container->view->render($response, "configure.phtml", $returnParameters)
-                ->withStatus(403);
-        }
-        
-        $installation_oauth_id = $jwt->iss;
-        $_SESSION["authenticated_for_{$installation_oauth_id}"] = true;
+
         $mapper = $this->container->db->mapper('\Entity\Installation');
         $installation = $mapper->all()->with('twitter_authentication')->where(['oauth_id' => $installation_oauth_id])->first();
 
@@ -48,6 +57,8 @@ class ConfigurationController {
         $this->container->logger->info("configurations", [ "oauth_id" => $installation_oauth_id, "configurations" => $configurations->toArray() ]);
         
         $response = $this->container->view->render($response, "configure.phtml", [
+            "baseUrl" => $this->container->config['global']['baseUrl'],
+            "installation_oauth_id" => $installation_oauth_id,
             "errors" => null,
             "success" => null,
             "configurations" => $configurations,
@@ -93,6 +104,8 @@ class ConfigurationController {
         $configurations = $joinMapper->where([ 'installations_oauth_id' => $installation_oauth_id ])->active();
         
         $returnParameters = [
+            "baseUrl" => $this->container->config['global']['baseUrl'],
+            "installation_oauth_id" => $installation_oauth_id,
             "errors" => $this->getFlattenedErrors($this->configureValidation->getErrors()),
             "success" => null,
             "configurations" => $configurations,

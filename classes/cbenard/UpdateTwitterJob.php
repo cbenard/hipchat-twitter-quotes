@@ -31,7 +31,7 @@ class UpdateTwitterJob {
             $this->twitter->setBearerToken($twitter_token);
         }
 
-        $this->updateAccountInformation($screen_name);
+        $this->updateAccountInformation($installation, $screen_name);
         $this->updateTweetsByName($screen_name, $backfill, $suppress_notification);
 
         if (!$twitter_token && $this->twitter->getBearerToken()) {
@@ -64,7 +64,7 @@ class UpdateTwitterJob {
                     $currentRecord = $mapper->get($user_id);
                     
                     if ($currentRecord->updated_on < $now) {
-                        $this->updateAccountInformation(null, $user_id);
+                        $this->updateAccountInformation($installation, null, $user_id);
                     }
                 }
             }
@@ -103,7 +103,7 @@ class UpdateTwitterJob {
         return $accounts;
     }
     
-    private function updateAccountInformation($twitter_screenname, $twitter_user_id = null, $currentInfo = null) {
+    private function updateAccountInformation($installation, $twitter_screenname, $twitter_user_id = null, $currentInfo = null) {
         if (!$currentInfo) {
             if ($twitter_user_id) {
                 $currentInfo = $this->twitter->getUserInfoByID($twitter_user_id);
@@ -194,7 +194,7 @@ class UpdateTwitterJob {
                 'screen_name' => $tweetToUseForUserUpdate->user->screen_name
             );
 
-            $this->updateAccountInformation(null, null, $currentInfo);
+            $this->updateAccountInformation($installation, null, null, $currentInfo);
             $this->log("Updated user information for @{$currentInfo->screen_name}...");
         }
 

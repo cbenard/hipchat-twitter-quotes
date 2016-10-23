@@ -16,6 +16,7 @@ class InstallationTwitterUser extends \Spot\Entity {
             'is_active' => [ 'type' => 'boolean', 'required' => true, 'default' => true, 'value' => true ],
             'created_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
             'updated_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
+            'error_status' => [ 'type' => 'integer' ],
         ];
     }
 
