@@ -2,6 +2,8 @@
 namespace cbenard;
 
 use \cbenard\Codebird;
+use \cbenard\TwitterErrorStatus;
+use \cbenard\TwitterException;
 
 class TwitterService {
 
@@ -62,8 +64,19 @@ class TwitterService {
             throw new \Exception("Unable to find user id or screenname in input attempting to get user info.");
         }
 
-        $response = $this->client->users_show($params, true);
+        $response = $this->client->users_show($params, $this->isAppAuth($access_token, $access_token_secret));
         
+        if ($response->httpstatus == 401 && isset($response->error)) {
+            throw new TwitterException("Unable to follow user with current credentials.", TwitterErrorStatus::UNABLE_TO_FOLLOW);
+        }
+        if ($response->httpstatus != 200 && isset($response->code)) {
+            if ($response->code == 89) {
+                throw new TwitterException("Invalid token. Perhaps revoked?", TwitterErrorStatus::INVALID_TOKEN);
+            }
+            if ($response->code == 34) {
+                throw new TwitterException("User not found", TwitterErrorStatus::INVALID_USER);
+            }
+        }
         if (!isset($response->screen_name)) {
             throw new \Exception("Unable to find screen name: " . $screen_name);
         }
@@ -90,12 +103,12 @@ class TwitterService {
                 'contributor_details' => 'false',
                 'include_rts' => 'false'
         ];
-        
+
         if ($since_id) {
             $params['since_id'] = $since_id;
         }
         
-        $response = $this->client->statuses_userTimeline($params, true);
+        $response = $this->client->statuses_userTimeline($params, $this->isAppAuth($access_token, $access_token_secret));
 
         $o = $this->getTweetsFromResponse($response);
         $result = array_map(function($item) {
@@ -124,7 +137,7 @@ class TwitterService {
                 'max_id' => $before_id
         ];
         
-        $response = $this->client->statuses_userTimeline($params, true);
+        $response = $this->client->statuses_userTimeline($params, $this->isAppAuth($access_token, $access_token_secret));
         
         $o = $this->getTweetsFromResponse($response);
         $result = array_map(function($item) {
@@ -200,5 +213,9 @@ class TwitterService {
     public function oauthAuthorizationUrl($request_token, $request_token_secret) {
         $this->setToken($request_token, $request_token_secret);
         return $this->client->oauth_authorize();
+    }
+
+    private function isAppAuth($access_token, $access_token_secret) {
+        return !$access_token || !$access_token_secret;
     }
 }

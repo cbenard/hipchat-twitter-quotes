@@ -19,7 +19,6 @@ class Installation extends \Spot\Entity {
             'created_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
             'updated_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
             'twitter_authentication_id' => [ 'type' => 'integer' ],
-            'error_status' => [ 'type' => 'integer' ],
         ];
     }
 

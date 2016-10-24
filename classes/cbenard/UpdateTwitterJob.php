@@ -2,7 +2,8 @@
 
 namespace cbenard;
 
-use \cbenard\ErrorStatus;
+use \cbenard\TwitterErrorStatus;
+use \cbenard\TwitterException;
 
 class UpdateTwitterJob {
     private $container;
@@ -32,7 +33,7 @@ class UpdateTwitterJob {
         }
 
         $this->updateAccountInformation($installation, $screen_name);
-        $this->updateTweetsByName($screen_name, $backfill, $suppress_notification);
+        $this->updateTweetsByName($installation, $screen_name, $backfill, $suppress_notification);
 
         if (!$twitter_token && $this->twitter->getBearerToken()) {
             $this->log("Saving new Twitter bearer token...");
@@ -49,28 +50,76 @@ class UpdateTwitterJob {
             $this->twitter->setBearerToken($twitter_token);
         }
 
-        $accounts = $this->getAccounts();
-        
-        foreach ($accounts as $user_id) {
-            try {
-                $newCount = $this->updateTweetsByID($user_id, $backfill);
+        $usersToHandle = [];
 
-                if (!$newCount) {
-                    // If there are no new tweets to use for updates and
-                    //   account hasn't updated in > 1hr, update account info
-                    $now = new \DateTime;
-                    $now->modify("-1 hour");
-                    $mapper = $this->db->mapper('\Entity\TwitterUser');
-                    $currentRecord = $mapper->get($user_id);
-                    
-                    if ($currentRecord->updated_on < $now) {
-                        $this->updateAccountInformation($installation, null, $user_id);
+        $mapper = $this->db->mapper('\Entity\InstallationTwitterUser');
+        $joins = $mapper->all()->active();
+
+        foreach ($joins as $join) {
+            if (!array_key_exists($join->user->user_id, $usersToHandle)) {
+                $usersToHandle[$join->user->user_id] = [ 'user' => $join->user, 'installations' => [] ];
+            }
+            $usersToHandle[$join->user->user_id]['installations'][] = $join->installation;
+        }
+
+        foreach ($usersToHandle as $user_id => $userToHandle) {
+            $installation = null;
+            $user = null;
+            $tryCount = 0;
+            $triedIndex = [];
+            $success = false;
+
+            while (!$success && $tryCount < count($userToHandle['installations'])) {
+                try {
+                    $this->twitter->logout();
+                    $index = null;
+                    while ($index === null || in_array($index, $triedIndex)) {
+                        $index = rand(0, count($userToHandle['installations']) - 1);
+//                        print_r("index: $index\ntriedIndex: " . print_r($triedIndex, true) . PHP_EOL);
+                    }
+                    $installation = $userToHandle['installations'][$index];
+                    $user = $userToHandle['user'];
+                    $user_id = $user->user_id;
+                    $tryCount++;
+
+                    $newCount = $this->updateTweetsByID($installation, $user_id, $backfill);
+
+                    if (!$newCount) {
+                        // If there are no new tweets to use for updates and
+                        //   account hasn't updated in > 1hr, update account info
+                        $now = new \DateTime;
+                        $now->modify("-1 hour");
+                        $mapper = $this->db->mapper('\Entity\TwitterUser');
+                        $currentRecord = $mapper->get($user_id);
+                        
+                        if ($currentRecord->updated_on < $now) {
+                            $this->updateAccountInformation($installation, null, $user_id);
+                        }
+                    }
+
+                    $success = true;
+                }
+                catch (\Exception $ex) {
+                    $this->log("Unable to fetch information for ID: ". $user_id);
+                    $this->container->logger->error("Unable to run twitter update job", [ "screen_name" => $twitter_screenname, "exception" => $ex ]);
+
+                    if ($ex instanceof TwitterException) {
+                        switch ($ex->status) {
+                            case TwitterErrorStatus::INVALID_TOKEN:
+                                $exmapper = $this->db->mapper('\Entity\TwitterAuthentication');
+                                $installation->twitter_authentication->error_status = TwitterErrorStatus::INVALID_TOKEN;
+                                $exmapper->save($installation->twitter_authentication);
+                                break;
+                            /* TODO: error handling/logging
+                            case TwitterErrorStatus::UNABLE_TO_FOLLOW:
+                                $exmapper = $this->db->mapper('\Entity\InstallationTwitterUser');
+                                $installation->twitter_authentication->error_status = TwitterErrorStatus::UNABLE_TO_FOLLOW;
+                                $exmapper->save($installation->twitter_authentication);
+                                break;
+                            */
+                        }
                     }
                 }
-            }
-            catch (\Exception $ex) {
-                $this->log("Unable to fetch information for ID: ". $user_id);
-                $this->container->logger->error("Unable to run twitter update job", [ "screen_name" => $twitter_screenname, "exception" => $ex ]);
             }
         }
         
@@ -103,40 +152,85 @@ class UpdateTwitterJob {
         return $accounts;
     }
     
-    private function updateAccountInformation($installation, $twitter_screenname, $twitter_user_id = null, $currentInfo = null) {
-        if (!$currentInfo) {
-            if ($twitter_user_id) {
-                $currentInfo = $this->twitter->getUserInfoByID($twitter_user_id);
+    private function updateAccountInformation($installation, $twitter_screenname = null, $twitter_user_id = null, $currentInfo = null) {
+        try {
+            if (!$currentInfo) {
+                $access_token = null;
+                $access_token_secret = null;
+                if ($installation->twitter_authentication
+                    && $installation->twitter_authentication->access_token
+                    && $installation->twitter_authentication->access_token_secret) {
+
+                    $access_token = $installation->twitter_authentication->access_token;
+                    $access_token_secret = $installation->twitter_authentication->access_token_secret;
+                }
+
+                if ($twitter_user_id) {
+                    $currentInfo = $this->twitter->getUserInfoByID($installation, $twitter_user_id, $access_token = $access_token, $access_token_secret = $access_token_secret);
+                }
+                elseif ($twitter_screenname) {
+                    $currentInfo = $this->twitter->getUserInfoByName($twitter_screenname, $access_token = $access_token, $access_token_secret = $access_token_secret);
+                }
+                else {
+                    throw new \Exception("Neither screenname nor user id were provided.");
+                }
             }
-            else {
-                $currentInfo = $this->twitter->getUserInfoByName($twitter_screenname);
+            $this->log("Retrieved information for @{$currentInfo->screen_name}...");
+            
+            $mapper = $this->db->mapper('\Entity\TwitterUser');
+            $currentRecord = $mapper->get($currentInfo->id);
+            if (!$currentRecord) {
+                $currentRecord = $mapper->build([ 'user_id' => $currentInfo->id ]);
             }
+            
+            $currentRecord->screen_name = $currentInfo->screen_name;
+            $currentRecord->profile_image_url_https = $currentInfo->profile_image_url_https;
+            $currentRecord->name = $currentInfo->name;
+            
+            $mapper->save($currentRecord);
+            $this->log("Saved.\r\n");
         }
-        $this->log("Retrieved information for @{$currentInfo->screen_name}...");
-        
-        $mapper = $this->db->mapper('\Entity\TwitterUser');
-        $currentRecord = $mapper->get($currentInfo->id);
-        if (!$currentRecord) {
-            $currentRecord = $mapper->build([ 'user_id' => $currentInfo->id ]);
+        catch (TwitterException $ex) {
+            $this->log("Exception retrieving user information from Twitter.", [
+                "installation" => $installation,
+                "twitter_screenname" => $twitter_screenname,
+                "twitter_user_id" => $twitter_user_id,
+                "currentInfo" => $currentInfo,
+                "exception" => $ex
+            ]);
+
+            switch ($ex->status) {
+                case TwitterErrorStatus::INVALID_TOKEN:
+                    $exmapper = $this->db->mapper('\Entity\TwitterAuthentication');
+                    $installation->twitter_authentication->error_status = TwitterErrorStatus::INVALID_TOKEN;
+                    $exmapper->save($installation->twitter_authentication);
+                    break;
+            }
+
+            throw $ex;
         }
-        
-        $currentRecord->screen_name = $currentInfo->screen_name;
-        $currentRecord->profile_image_url_https = $currentInfo->profile_image_url_https;
-        $currentRecord->name = $currentInfo->name;
-        
-        $mapper->save($currentRecord);
-        $this->log("Saved.\r\n");
     }
     
-    private function updateTweetsByName($twitter_screenname, $backfill = true, $suppress_notification = false) {
-        return $this->_updateTweets($twitter_screenname, null, $backfill, $suppress_notification);
+    private function updateTweetsByName($installation, $twitter_screenname, $backfill = true, $suppress_notification = false) {
+        return $this->_updateTweets($installation, $twitter_screenname, null, $backfill, $suppress_notification);
     }
     
-    private function updateTweetsByID($user_id, $backfill = true, $suppress_notification = false) {
-        return $this->_updateTweets(null, $user_id, $backfill, $suppress_notification);
+    private function updateTweetsByID($installation, $user_id, $backfill = true, $suppress_notification = false) {
+        return $this->_updateTweets($installation, null, $user_id, $backfill, $suppress_notification);
     }
     
-    private function _updateTweets($twitter_screenname, $twitter_user_id, $backfill = true, $suppress_notification = false) {
+    private function _updateTweets($installation, $twitter_screenname, $twitter_user_id, $backfill = true, $suppress_notification = false) {
+        $access_token = null;
+        $access_token_secret = null;
+
+        if ($installation->twitter_authentication
+            && $installation->twitter_authentication->access_token
+            && $installation->twitter_authentication->access_token_secret) {
+
+            $access_token = $installation->twitter_authentication->access_token;
+            $access_token_secret = $installation->twitter_authentication->access_token_secret;
+        }
+
         if (!$twitter_user_id) {
             $mapper = $this->db->mapper('\Entity\TwitterUser');
             $temp_user = $mapper->first([ 'screen_name' => $twitter_screenname]);
@@ -152,7 +246,7 @@ class UpdateTwitterJob {
         $max_tweet = $mapper->latest($twitter_user_id);
         $max_tweet_id = $max_tweet ? $max_tweet->tweet_id : null;
         
-        $tweets = $this->twitter->getTweetsSince($twitter_user_id, $max_tweet_id);
+        $tweets = $this->twitter->getTweetsSince($twitter_user_id, $max_tweet_id, $access_token = $access_token, $access_token_secret = $access_token_secret);
         $this->log("Retrieved tweets for @{$twitter_screenname}...");
 
         $initialCount = count($tweets);
@@ -171,7 +265,7 @@ class UpdateTwitterJob {
             $min_tweet = $mapper->earliest($twitter_user_id);
             
             if ($min_tweet && $backfill) {
-                $backfillTweets = $this->twitter->getTweetsBefore($twitter_user_id, $min_tweet->tweet_id);
+                $backfillTweets = $this->twitter->getTweetsBefore($twitter_user_id, $min_tweet->tweet_id, $access_token = $access_token, $access_token_secret = $access_token_secret);
                 $this->log("Retrieving backfill tweets for @{$twitter_screenname}...");
 
                 $backfillCount = count($backfillTweets);

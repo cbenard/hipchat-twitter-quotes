@@ -20,6 +20,7 @@ class TwitterAuthentication extends \Spot\Entity {
             'created_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
             'updated_on' => [ 'type' => 'datetime', 'required' => true, 'value' => new \DateTime ],
             'verified_on' => [ 'type' => 'datetime' ],
+            'error_status' => [ 'type' => 'integer' ],
         ];
     }
 

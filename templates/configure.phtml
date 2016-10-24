@@ -64,13 +64,25 @@
 
         <?php if (!isset($dont_display_form)): ?>
 
-        <?php if (!isset($twitter_authentication_screen_name) || !$twitter_authentication_screen_name): ?>
-            <div id="sign-in-with-twitter-container">
-                <img id="sign-in-with-twitter-button" />
-                <p>Connect to Twitter to follow protected accounts with Twitter Quotes.</p>
-            </div>
+        <div id="sign-in-with-twitter-container">
+        <?php if (!isset($twitter_auth) || !isset($twitter_auth->screen_name) || !$twitter_auth->screen_name): ?>
+            <img id="sign-in-with-twitter-button" />
+            <p>Connect to Twitter to follow protected accounts with Twitter Quotes.</p>
         <?php else: ?>
+            <h5>Signed in as</h5>
+            <div class="avatar-container">
+                <img class="twitter-user-avatar" src="<?= $twitter_auth->profile_image_url_https ?>" />
+                <?php if ($twitter_auth->screen_name != $twitter_auth->name): ?>
+                <span class="twitter-user-label"><?= $twitter_auth->name ?></span>
+                <span class="twitter-user-sublabel">@<?= $twitter_auth->screen_name ?></span>
+                <?php else: ?>
+                <span class="twitter-user-label">@<?= $twitter_auth->screen_name ?></span>
+                <?php endif; ?>
+                <div style="clear:both"></div>
+            </div>
+            <a href="d">Sign out</a>
         <?php endif; ?>
+        </div>
 
         <form method="POST" id="theform" action="<?= $postUri ?>">
             <div class="groupcontainer">

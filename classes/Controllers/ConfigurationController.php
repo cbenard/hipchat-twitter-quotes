@@ -74,6 +74,8 @@ class ConfigurationController {
             "csrf_valueKey" => $this->csrf->getTokenValueKey(),
             "csrf_name" => $request->getAttribute($this->csrf->getTokenNameKey()),
             "csrf_value" => $request->getAttribute($this->csrf->getTokenValueKey()),
+
+            "twitter_auth" => $installation->twitter_authentication,
         ]);
 
         return $response;
@@ -123,6 +125,8 @@ class ConfigurationController {
             "csrf_valueKey" => $this->csrf->getTokenValueKey(),
             "csrf_name" => $request->getAttribute($this->csrf->getTokenNameKey()),
             "csrf_value" => $request->getAttribute($this->csrf->getTokenValueKey()),
+
+            "twitter_auth" => $installation->twitter_authentication,
         ];
         
         $saveID = null;
