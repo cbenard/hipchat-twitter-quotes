@@ -35,5 +35,7 @@ $app->get('/twitterauth/create', '\Controllers\TwitterAuthenticationController:c
     ->setName('twitterauth_create');
 $app->get('/twitterauth/receive', '\Controllers\TwitterAuthenticationController:complete')
     ->setName('twitterauth_complete');
+$app->get('/twitterauth/delete', '\Controllers\TwitterAuthenticationController:delete')
+    ->setName('twitterauth_delete');
 
 $app->run();

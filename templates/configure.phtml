@@ -22,7 +22,7 @@
                 display: block;
             }
             .avatar-container {
-                margin-bottom: 10px;
+                margin-bottom: 20px;
             }
             .existing-group {
                 margin-bottom: 30px;
@@ -38,6 +38,10 @@
                 padding: 0;
                 cursor: pointer;
                 background: url('<?= $baseUrl ?>/assets/images/sign-in-with-twitter-gray.png');
+            }
+
+            h1,h2,h3,h4,h5,h6 {
+                text-transform: none;
             }
         </style>
     </head>
@@ -79,8 +83,8 @@
                 <span class="twitter-user-label">@<?= $twitter_auth->screen_name ?></span>
                 <?php endif; ?>
                 <div style="clear:both"></div>
+                <a href="<?= $baseUrl ?>/twitterauth/delete?installation_oauth_id=<?= urlencode($installation_oauth_id) ?>">Sign out</a>
             </div>
-            <a href="d">Sign out</a>
         <?php endif; ?>
         </div>
 

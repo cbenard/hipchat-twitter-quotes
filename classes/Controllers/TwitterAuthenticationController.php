@@ -147,6 +147,57 @@ class TwitterAuthenticationController {
 
         return $response;
     }
+    
+    public function delete(Request $request, Response $response, $args) {
+        $this->container->logger->info("Twitter Authentication Delete Requested", [ 'params' => $request->getQueryParams() ]);
+        $params = $request->getQueryParams();
+        $installation_oauth_id = $params['installation_oauth_id'];
+
+        $baseUrl = $this->container->config['global']['baseUrl'];
+        $encodedAuthID = urlencode($installation_oauth_id);
+        $configureUrl = "{$baseUrl}/configure?installation_oauth_id={$encodedAuthID}";
+
+        $installationMapper = $this->container->db->mapper('\Entity\Installation');
+        $installation = $installationMapper->get($installation_oauth_id); 
+        if (!$installation) {
+            $this->container->logger->error("Unable to find HipChat installation from OAuth ID.", [ "params" => $params, "request" => $request, "session" => $_SESSION ]);
+            return $this->createErrorResponse($response, "Unable to find HipChat installation from OAuth ID: " . $installation_oauth_id, 403);
+        }
+
+        if (!$installation->twitter_authentication_id)
+        {
+            // For some reason delete was called when they aren't logged in
+            return $response->withStatus(302)->withHeader('Location', $configureUrl);
+        }
+
+        $authMapper = $this->container->db->mapper('\Entity\TwitterAuthentication');
+        $auth = $authMapper->get($installation->twitter_authentication_id);
+        if (!$auth) {
+            $this->container->logger->error("Unable to find Twitter Authentication from ID.", [ "params" => $params, "request" => $request, "session" => $_SESSION ]);
+            return $this->createErrorResponse($response, "Unable to find Twitter Authentication from ID: " . $params['id'], 403);
+        }
+
+        $error = $this->runPreFlightChecks($installation_oauth_id);
+        if (!$installation_oauth_id || $error) {
+            if (!$installation_oauth_id) {
+                $error = "Installation OAuth ID not specified.";
+            }
+
+            $body = $response->getBody();
+            $body->write($error);
+            return $response->withStatus(403);
+        }
+
+        // Disassociate
+        $installation->twitter_authentication_id = null;
+        $installationMapper->save($installation);
+
+        // Delete login data
+        $authMapper->delete($auth);
+
+        // Redirect to configure
+        return $response->withStatus(302)->withHeader('Location', $configureUrl);
+    }
 
     private function runPreFlightChecks($installation_oauth_id) {
         if (!isset($_SESSION["authenticated_for_{$installation_oauth_id}"])
