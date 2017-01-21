@@ -338,7 +338,7 @@ class UpdateTwitterJob {
                         $message->message_format = "html";
                         $message->color = "yellow";
                         $tweetplurality = $remainder > 1 ? "tweets were" : "tweet was";
-                        $message->message = "{$remainder} more {$tweetplurality} imported from <a href=\"https://twitter.com/{$configuration->screen_name}\">@{$configuration->screen_name}</a> but not displayed.";
+                        $message->message = "{$remainder} more {$tweetplurality} imported from <a href=\"https://twitter.com/{$configuration->user->screen_name}\">@{$configuration->user->screen_name}</a> but not displayed.";
                         
                         $this->hipchat->sendRoomNotification($configuration->installation, $message);
                     }
